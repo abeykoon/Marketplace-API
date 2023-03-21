@@ -1,0 +1,8 @@
+[package]
+org = "hasithah"
+name = "choreo_marketplace"
+version = "0.1.0"
+distribution = "2201.3.2"
+
+[build-options]
+observabilityIncluded = true

@@ -1,0 +1,55 @@
+1. Pre-released APIs are added to the search by default. Those APIs will have a label called `pre-release` and users can identify,
+ further search based on that. 
+
+2. apis related to visibility level (additional)
+
+    resource function get [string orgName]/[string projectName]/[string componentName]/[string apiName]/[string 'version](boolean include_prereleases=false) returns ChoreoApi|error {
+        Api api = { id: "skmsdm"};
+        return api;
+    };
+
+    resource function get [string orgName]/[string projectName]/[string componentName](boolean include_prereleases=false) returns ChoreoApi[]|error {
+        return [{id: "skmsdm"}];
+    };
+
+    resource function get [string orgName]/[string projectName](boolean include_prereleases=false) returns ChoreoApi[]|error {
+        return [{id: "skmsdm"}];
+    };
+
+    resource function get [string orgName](boolean include_prereleases=false) returns ChoreoApi|Api[]|error {
+        return [{id: "skmsdm"}];
+    };
+
+3.  keywords related to visibility level (additional)
+    
+    
+    resource function get keywords/[string orgName]/[string projectname]() returns Keyword[]|error {
+        return [
+                {keyword: "business management/ERP", count: 6}, 
+                {keyword: "billing/weekly calc", count: 2}
+            ];
+    };
+
+    resource function get keywords/[string orgName]() returns Keyword[]|error {
+        return [
+                {keyword: "business management/ERP", count: 6}, 
+                {keyword: "billing/weekly calc", count: 2}
+            ];
+    };
+
+    resource function get keywords() returns Keyword[]|error {
+        return [
+                {keyword: "business management/ERP", count: 6}, 
+                {keyword: "billing/weekly calc", count: 2}
+            ];
+    };
+
+4. stats, versions and keywords are common attributes of any resource. Anything else?
+
+5. For specific attributes of a resource type we'll use paths as 
+
+     - apis/
+     - configs/
+     - template/
+
+6. 
