@@ -49,9 +49,9 @@ public type Internal record {
 
 # Represents visibility attributes of an externally exposed resouce of Choreo marketplace
 #
-# + owner - owner of public resource (i.e Choreo)
+# + organizationName - owner of public resource (i.e Choreo)
 public type External record {
-    string owner;
+    string organizationName;
 };
 
 # Represents a keyword associated with a marketplace resource 
