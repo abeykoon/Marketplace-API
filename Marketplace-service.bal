@@ -41,11 +41,11 @@ service / on new http:Listener(9000) {
     # + projectName - Name of the Choreo project within which keyword search needs to operate 
     # + resourceType - Type of resource (i.e APIs, Configurations) to filter the search   
     # + return - List of keywords matching search 
-    resource function get keywords(string? orgName, string? projectName, ResourceType resourceType) returns Keyword[]|error {
-            return [
-                {keyword: "business management/ERP", count: 6}, 
-                {keyword: "billing/weekly calc", count: 2}
-            ];
+    resource function get keywords(string? orgName, string? projectName, ResourceType resourceType) returns KeywordInfo[]|error {
+        return [
+            {keyword: "business management/ERP", count: 6}, 
+            {keyword: "billing/weekly calc", count: 2}
+        ];
     }
 
     
@@ -57,19 +57,11 @@ service / on new http:Listener(9000) {
         return {usageCount: 235, rating: 4};
     } ;
 
-    # Get all versions (common) of a resource 
-    #
-    # + resourceId - ID of the resource 
-    # + return - List of version IDs    //TODO: need to render all info, following so maybe version number and resouce ID? 
-    resource function get resources/[string resourceId]/versions() returns string[]|error {
-        return ["1.0.0", "1.1.0","2.0.0."];
-    };
-
     # Get all keywords (common) of a resource 
     #
     # + resourceId - ID of the resource 
     # + return - List of keywords
-    resource function get resources/[string resourceId]/keywords() returns Keyword[]|error {
+    resource function get resources/[string resourceId]/keywords() returns KeywordInfo[]|error {
         return [
                 {keyword: "business management/ERP", count: 6}, 
                 {keyword: "billing/weekly calc", count: 2}
@@ -84,7 +76,15 @@ service / on new http:Listener(9000) {
 
     }
 
-    //Subscription related APIs (specific to APIs)
+    //Subscription and API related APIs (specific to APIs)
+
+    # Get all versions (common) of a resource 
+    #
+    # + resourceId - ID of the resource 
+    # + return - List of version IDs    
+    resource function get apis/[string resourceId]/versions() returns ApiVersion[]|error {
+        return [];
+    };
 
     # Get APIM applications visible to the user within the Choreo organization
     #

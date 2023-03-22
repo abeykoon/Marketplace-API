@@ -52,4 +52,15 @@
      - configs/
      - template/
 
-6. 
+6. Metadata model 
+
+    
+    
+    string id;
+    string name; 
+    ResourceType resourceType;
+    Visibility visibility;
+    string description;
+    UsageDetail usageStats;
+    string[] keywords?;
+    string iconPath;
