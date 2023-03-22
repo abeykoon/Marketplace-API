@@ -8,20 +8,21 @@ const DEFAULT_API_ICON_PATH = "";
 public type Api record {|
     *CommonAttributes;
     string iconPath = DEFAULT_API_ICON_PATH;
-    ApiVersion[] apiVersions;
+    *ApiVersion;
+    string[] apiVersions;
 |};
 
 # Version of an API 
 #
-# + createdDate - Field Description  
-# + 'version - Field Description  
-# + docLocation - Field Description  
-# + Idl - Interface Definition associated with the API resource 
-# + endpoints - List of public endpoints API is accessible
+# + createdDate - Created date of API version 
+# + 'version - Version number  
+# + documentation - Documentation specific to the API version
+# + Idl - Interface Definition associated with the API version 
+# + endpoints - List of endpoints API is accessible
 public type ApiVersion record {|
     string createdDate;
     string 'version;
-    string docLocation;
+    string documentation;
     IDL Idl;
     APIEndpoint[] endpoints?;
 |};

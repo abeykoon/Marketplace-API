@@ -1,7 +1,7 @@
 import ballerina/http;
 
 
-service / on new http:Listener(9000) {
+service /registry on new http:Listener(9000) {
     
     function init() returns error? {
 
@@ -16,75 +16,81 @@ service / on new http:Listener(9000) {
     #             If speficied, search will return resouces only exposed by this project.   
     #             `orgName` must be defined along with this parameter. 
     # + keywords - List of keywords to filter the search  
-    # + resourceType - Type of resource (i.e APIs, Configurations) to filter the search   
     # + 'limit - Max number of resources to contain in the respose  
     # + offset - Pagination offset  
     # + sort - Sorting parameters of the search 
     # + return - List of marketplace resources matches to search
-    resource function get resources(string? query, string? orgName, string? projectName, string[]? keywords, ResourceType resourceType,
-                 int 'limit = 20, int offset = 0, string sort = "org,ASC") returns Resource[]|error {
+    resource function get apis(string? query, string? orgName, string? projectName, string[]? keywords,
+                 int 'limit = 20, int offset = 0, string sort = "org,ASC") returns Api[]|error {
        return error("djdfjd");
     };
 
-    # Get specific resouce 
+    # Get specific API by Id(latest)
     #
-    # + resourceId - Id of the resource 
-    # + return - Resource detail of the requested Id
-    resource function get resources/[string resourceId] () returns Resource|error {
+    # + apiId - Id of the api 
+    # + return - Api with latest version detail included, along with other versions numbers
+    resource function get apis/[string apiId] () returns Api|error {
         return error("djdfjd");
     }
+
+    # Get specific API version 
+    #
+    # + apiId - Id of the api 
+    # + version - Version of the api to get details for
+    # + return - List of version numbers 
+    resource function get apis/[string apiId]/[string 'version] () returns Api|error {
+         return error("djdfjd");
+    };
+
+    # Get API by name
+    #
+    # + orgName - Organization by which API is exposed   
+    # + projectName - Project by which API is exposed   
+    # + component - Component by which API is exposed   
+    # + apiName - Name of the API/service
+    # + return - API information of latest version
+    resource function get apis/[string orgName]/[string projectName]/[string component]/[string apiName] () returns Api|error {
+        return error("djdfjd");
+    }
+
+    # Get specific API version by name
+    #
+    # + orgName - Organization by which API is exposed   
+    # + projectName - Project by which API is exposed   
+    # + component - Component by which API is exposed   
+    # + apiName - Name of the API/service
+    # + 'version - Version of the API/service
+    # + return - API information of specified version
+    resource function get apis/[string orgName]/[string projectName]/[string component]/[string apiName]/[string 'version]() returns Api|error {
+        return error("djdfjd");
+    }
+
+    # Get popular APIs
+    # + return - List of popular APIs
+    resource function get apis/popular() returns Api[]|error {
+        return [];
+    };
 
 
     # Search for keywords of resources in the marketplace 
     #
     # + orgName - Name of the Choreo organization within which keyword search needs to operate   
-    # + projectName - Name of the Choreo project within which keyword search needs to operate 
-    # + resourceType - Type of resource (i.e APIs, Configurations) to filter the search   
+    # + projectName - Name of the Choreo project within which keyword search needs to operate  
     # + return - List of keywords matching search 
-    resource function get keywords(string? orgName, string? projectName, ResourceType resourceType) returns KeywordInfo[]|error {
+    resource function get apis/keywords(string? orgName, string? projectName) returns KeywordInfo[]|error {
         return [
             {keyword: "business management/ERP", count: 6}, 
             {keyword: "billing/weekly calc", count: 2}
         ];
     }
 
-    
-    # Get usage statistics (common) of a resource 
-    #
-    # + resourceId - ID of the resource 
-    # + return - UsageDetail respose of requested resource 
-    resource function get resources/[string resourceId]/stats() returns UsageDetail|error {
-        return {usageCount: 235, rating: 4};
-    } ;
-
-    # Get all keywords (common) of a resource 
-    #
-    # + resourceId - ID of the resource 
-    # + return - List of keywords
-    resource function get resources/[string resourceId]/keywords() returns KeywordInfo[]|error {
-        return [
-                {keyword: "business management/ERP", count: 6}, 
-                {keyword: "billing/weekly calc", count: 2}
-            ];
-    }
-
     # Rate a given resource 
     #
     # + rateRequest - ResourceRateRequest payload 
     # + return - Error if unsuccessful
-    resource function post resources/rating (@http:Payload ResourceRateRequest rateRequest) returns error? {
+    resource function post apis/rating (@http:Payload ResourceRateRequest rateRequest) returns error? {
 
     }
-
-    //Subscription and API related APIs (specific to APIs)
-
-    # Get all versions (common) of a resource 
-    #
-    # + resourceId - ID of the resource 
-    # + return - List of version IDs    
-    resource function get apis/[string resourceId]/versions() returns ApiVersion[]|error {
-        return [];
-    };
 
     # Get APIM applications visible to the user within the Choreo organization
     #

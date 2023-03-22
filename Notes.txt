@@ -54,7 +54,7 @@
 
 6. Metadata model 
 
-    
+    Resources table (metadata)
     
     string id;
     string name; 
@@ -64,3 +64,14 @@
     UsageDetail usageStats;
     string[] keywords?;
     string iconPath;
+
+    APIs table (or can fetch from elsewhere giving id) --> call when u click on a tile 
+
+    string id;
+    string 'version;
+    string createdDate;
+    string docLocation;
+    IDL Idl;
+    APIEndpoint[] endpoints?;
+
+

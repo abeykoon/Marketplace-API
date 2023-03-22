@@ -3,7 +3,7 @@
 public type Resource Api|Config;
 
 # Types of resouces exposed by marketplace API
-public enum ResourceType { //can change
+public enum ResourceType {      //can change
     ApiType,
     ConfigType,
     TemplateType,
