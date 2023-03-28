@@ -1,0 +1,1882 @@
+type ComponentDeployment {
+  deploymentCount: Int
+  apiId: String
+  releaseId: String!
+  componentId: String!
+  environmentId: String!
+  versionId: String!
+  version: String!
+  build: RudderDeployedBuild!
+  deploymentStatus: String!
+  deploymentStatusV2: String!
+  cron: String!
+  invokeUrl: String
+  configCount: Int
+  scheduleLastRun: String
+  lifecycleStatus: String
+  apiRevision: ApimRevision
+}
+
+type Query {
+  project(orgHandler: String, orgId: Int!, projectId: String!): Project!
+  projects(orgId: Int!, orgHandler: String): [Project!]!
+  obeserverbilityUrl(orgHandler: String, componentId: String!, environmentId: String, versionId: String): String!
+  component(orgHandler: String, componentId: String, projectId: String, componentHandler: String): Component!
+  components(orgHandler: String!, projectId: String, options: ComponentsOptions): [Component!]!
+  canDeleteComponent(orgHandler: String!, componentId: String!): ComponentDeleteAvailability!
+  canDeleteComponents(orgHandler: String!, componentId: String!): [ComponentDeleteAvailability!]!
+  projectComponentLabels(orgId: Int!, projectId: String!): [String!]!
+  lastCommit(orgHandler: String, componentId: String!): CommitInformation!
+  DeploymentStatus(orgHandler: String, versionId: String, componentId: String!): DeploymentStatusRes!
+  deploymentStatusByVersion(versionId: String!, componentId: String!): [DeploymentStatusDataMapper!]!
+  codeServerStatus(orgHandler: String, orgId: Int!, componentId: String!, projectId: String!): GetCodeServerStatusResponse!
+  environments(orgHandler: String, orgUuid: String!, type: String, projectId: String): [Environment!]!
+  observerbilityIds(orgHandler: String, releaseIds: String!): [ReleaseIdToObservabilityIdMapping!]!
+  commitHistory(orgHandler: String, componentId: String!, branch: String): [CommitHistory!]!
+  branchList(orgHandler: String!, componentId: String!): [Branch!]!
+  deployments(orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!): [DeployedEnvironmentData!]!
+  subscriptionUsageStatus(orgUuid: String!): UsageStatus!
+  deploymentsV2(orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!): [DeployedEnvironment!]!
+  componentDeployment(orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!, environmentId: String!): ComponentDeployment!
+  proxyDeployment(orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!, environmentId: String!): ProxyDeployment!
+  deployment(environmentId: String!, orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!): DeployedEnvironmentData!
+  invokeInformation(orgHandler: String!, orgUuid: String!, componentId: String!, componentType: String!, versionId: String!, projectId: String): [InvokeData!]!
+  invokeUrl(orgHandler: String!, orgUuid: String!, componentId: String!, componentType: String!, versionId: String!, envId: String!): String
+  invokeUrls(orgHandler: String!, orgUuid: String!, componentId: String!, versionId: String!): [BasicInvokeData!]!
+  buildsByEnvironments(orgHandler: String!, build: BuildRevision!): [EnvBuild!]!
+  buildsByVersion(orgHandler: String!, build: BuildRevision!, skip: Int, limit: Int): [BuildMapping!]!
+  build(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  revisionsByEnv(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  userRepos: [GitHubOrgsAndRepositoriesForUser!]!
+  userRepoValidation(organizationName: String!, repoName: String!): UserGitHubRepositoryValidationData!
+  isValidNonEmptyRepo(organizationName: String!, repoName: String!, branch: String!, subPath: String): UserGitHubRepositoryValidationData!
+  componentPullRequests(componentId: String!): [UserGitHubRepositoryPR!]!
+  systemStatus: SystemStatus!
+  userRepoStatus(componentId: String!): UserGitHubRepositoryStatusData!
+  quotaLimitStatus(orgUuid: String!, resourceType: String!): QuotaLimitResponse!
+  repoDirectoryList(repositoryOrganization: String!, repositoryName: String!, repositoryBranch: String!): [RepositoryDirectory!]!
+  repoBranchList(repositoryOrganization: String!, repositoryName: String!): [RepositoryBranch!]!
+  containsFile(componentId: String!, commit: String!, path: String!): Boolean!
+  oasDefinition(componentId: String!, versionId: String!, environmentId: String!): String!
+  autoBuildTrigger(componentId: String!, versionId: String!): AutoDeploymentResMapper!
+  scanResult(componentId: String!, branch: String!): ScanResult!
+  buildLogs(componentId: String!, runId: String!): BuildLogs!
+  repoMetadata(organizationName: String!, repoName: String!, branch: String!, subPath: String, dockerFilePath: String, dockerContextPath: String, componentId: String, openAPIPath: String, libPath: String): RepositoryMetaDataMapperData!
+  cellDiagram(componentId: String!, commitHash: String!): CellDiagram!
+  distinctComponentTypeCount(orgId: Int!): [DistinctComponentCount!]!
+  componentEndpoint(input: QueryComponentEndpointInput!): ComponentEndpoint!
+  componentEndpoints(input: QueryComponentEndpointsInput!): [ComponentEndpoint!]!
+  componentEndpointApiDefinition(input: QueryComponentEndpointApiDefinitionInput!): ComponentEndpointApiDefinition!
+  commonCredentials(orgUuid: String!, projectId: String, scope: String): [CommonCredentialService!]!
+  commonCredential(orgUuid: String!, projectId: String, credentialId: String!): CommonCredentialService!
+}
+
+"""
+DeploymentStatusDataMapper
+
+"""
+type DeploymentStatusDataMapper {
+  """Id  """
+  id: Int!
+
+  """Name  """
+  name: String!
+
+  """Conclusion  """
+  conclusion: String
+
+  """Status  """
+  status: String!
+
+  """Started time"""
+  started_at: String
+
+  """Completed time """
+  completed_at: String
+
+  """SHA"""
+  sha: String
+
+  """Deployment is triggered automatically"""
+  isAutoDeploy: Boolean
+
+  """The reason for deployment failure"""
+  failureReason: Int
+
+  """commit Id of the source repo"""
+  sourceCommitId: String
+}
+
+"""
+ApimRevisionDeploymentInfo
+
+"""
+type ApimRevisionDeploymentInfo {
+  """Revision id """
+  revisionUuid: String!
+
+  """Environment name """
+  name: String!
+
+  """Virtual host """
+  vhost: String!
+
+  """Display name on devportal flag"""
+  displayOnDevportal: Boolean!
+
+  """Deployed time"""
+  deployedTime: Int
+
+  """Last deployed time"""
+  successDeployedTime: Int
+}
+
+type AutoDeploymentStatus {
+  success: Boolean!
+  message: String!
+}
+
+type Image {
+  id: String!
+  createdAt: String!
+  ipdatedAt: String!
+  imageVersion: String
+  imageRegistryId: String
+  imageRegistry: String
+  tagName: String!
+  imageName: String!
+  imageNameWithTag: String!
+  status: String!
+  tags: [String!]!
+  platformerTag: String!
+  gitHash: String!
+  committer: String
+  commitMsg: String!
+}
+
+"""
+`UserGitHubRepositoryStatusData`
+
+"""
+type UserGitHubRepositoryStatusData {
+  """flag to indicate whether the repository is valid or not.  """
+  isValid: Boolean!
+
+  """html url to the repository"""
+  url: String!
+
+  """additional message  """
+  message: String!
+}
+
+"""
+GraphQL mutation input object for generating endpoints
+
+"""
+input GenerateComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  releaseId: String!
+  commitHash: String!
+}
+
+"""
+Represents a create git credential request.
+
+"""
+input GitPatType {
+  pat: String!
+}
+
+"""
+ApimRevisions
+
+"""
+type ApimRevision {
+  """Revision Name  """
+  displayName: String!
+
+  """Revision id  """
+  id: String!
+
+  """Revision description"""
+  description: String!
+
+  """Created time """
+  createdTime: Int!
+
+  """ApimRevisionApiInfo  """
+  apiInfo: ApimRevisionApiInfo!
+
+  """ApimRevisionDeploymentInfo array"""
+  deploymentInfo: [ApimRevisionDeploymentInfo!]!
+}
+
+type RepositoryMetaDataMapperData {
+  isBareRepo: Boolean!
+  isSubPathValid: Boolean!
+  isValidRepo: Boolean!
+  isSubPathEmpty: Boolean!
+  hasBallerinaTomlInPath: Boolean!
+  hasBallerinaTomlInRoot: Boolean!
+  hasDockerfileInPath: Boolean!
+  isDockerfilePathValid: Boolean!
+  isDockerContextPathValid: Boolean!
+  hasOpenApiFileInPath: Boolean!
+  hasPomXmlInPath: Boolean!
+  hasPomXmlInRoot: Boolean!
+  isOpenApiFilePathValid: Boolean!
+  isLibPathValid: Boolean!
+}
+
+type EnvironmentMetadata {
+  choreoEnv: String!
+}
+
+type DeployedInformation {
+  environmentId: String!
+  environmentChoreoName: String!
+  deploymentCount: Int!
+  apiId: String
+  releaseId: String!
+  versionId: String!
+  version: String!
+  build: DeployedBuild!
+  deploymentStatus: String!
+  cron: String!
+  invokeUrl: String
+  configCount: Int
+}
+
+enum Status {
+  DOWN
+  TROUBLE
+  UP
+}
+
+type ScanResult {
+  checkovScan: String!
+  trivyScan: String!
+}
+
+"""
+ByocCreateComponentSchema
+
+"""
+input ByocCreateComponentSchema {
+  name: String!
+  orgId: Int!
+  orgHandler: String!
+  projectId: String!
+  labels: String!
+  description: String!
+  componentType: String!
+  userId: Int
+  byocConfig: ByocConfig!
+  port: Int
+  oasFilePath: String
+  accessibility: String
+  displayName: String!
+}
+
+enum GetCodeServerStatusResponse_CodeServerStatus {
+  WAITING_FOR_NODE
+  ERROR
+  READY
+  INITIALIZING
+  NOT_DEPLOYED
+}
+
+"""
+Component Endpoint object that is exposed from the GraphQL
+
+"""
+type ComponentEndpoint {
+  """Unique UUID of the endpoint object"""
+  id: String!
+
+  """Created date for the endpoint"""
+  createdAt: String!
+
+  """Updated date for the endpoint"""
+  updatedAt: String!
+
+  """UUID of the release where this specific endpoint is attached"""
+  releaseId: String!
+
+  """Numeric port value that gets exposed via this endpoint"""
+  port: Int!
+
+  """UUID of the environment this endpoint belong to"""
+  environmentId: String!
+
+  """Display name of the endpoint"""
+  displayName: String!
+
+  """
+  Invoke url of this specific endpoint. # DEPRECATED - Use 'project_url' field instead.
+  """
+  invokeUrl: String!
+
+  """
+  Hostname of the endpoint. # DEPRECATED - Use one of 'project_url', 'organization_url','public_url' to derive the hostname.
+  """
+  hostName: String!
+
+  """
+  Communication protocol this endpoint is accepting. Example: HTTP, gRPC, GraphQL. # DEPRECATED - Use 'type' field instead.
+  """
+  protocol: String!
+
+  """
+  Optional field that describe the API context that exposed via this endpoint. 
+  """
+  apiContext: String
+
+  """Optional field that provides the path to the API definition."""
+  apiDefinitionPath: String
+
+  """
+  Optional field that indicates the network level visibility of this endpoint. 
+  Accepted values: Project|Organization|Public. Defaults to Project.
+  """
+  visibility: String
+
+  """
+  Type of the traffic this endpoint is accepting. Example: REST, GraphQL, etc.
+  Allowed values: REST, GraphQL, GRPC
+  """
+  type: String!
+
+  """A field that indicates the managed API id given from the API Manager."""
+  apimId: String!
+
+  """
+  Revision id of the managed API endpoint which is deployed to a Gateway.
+  """
+  apimRevisionId: String!
+
+  """A unique API name geenrated for this specific endpoint."""
+  apimName: String!
+
+  """
+  Indicates the unmanaged endpoint url which can be directly accessible within a project.
+  """
+  projectUrl: String!
+
+  """
+  Indicates the managed API endpoint url that can be only accessible within the organization. The value will be empty if the endpoint is not exposed.
+  """
+  organizationUrl: String!
+
+  """
+  Indicates the managed API endpoint url that is exposed to the internet. The value will be empty if the endpoint is not exposed.
+  """
+  publicUrl: String!
+
+  """A field that indicates the endpoint deployment status."""
+  state: String!
+
+  """Indicates the reason for why this endpoint in the current state."""
+  stateReason: ComponentEndpointStateReason
+
+  """Indicates the soft delete state for this endpoint."""
+  isDeleted: Boolean!
+
+  """Indicates the time of this endpoint is deleted."""
+  deletedAt: String!
+}
+
+type ApiVersionEntry {
+  id: String!
+  createdAt: String!
+  updatedAt: String!
+  organizationId: String!
+  projectId: String!
+  apiVersion: String!
+  branch: String
+  appId: String!
+  latest: Boolean!
+  accessibility: String
+  proxyName: String
+  proxyUrl: String
+  proxyId: String
+  state: String
+  appEnvVersions: [AppEnvVersion!]
+  cellDiagram: CellDiagram
+}
+
+type Project {
+  name: String!
+  handler: String
+  region: String
+  extendedHandler: String
+  version: String!
+  labels: String
+  orgId: Int!
+  id: String!
+  owner: String
+  description: String!
+  createdDate: String!
+  components(orgHandler: String!): [Component!]!
+}
+
+"""
+AutoDeploymentResMapper
+
+"""
+type AutoDeploymentResMapper {
+  """ Success flag"""
+  success: Boolean!
+
+  """ Message"""
+  message: String!
+
+  """Auto Deployment data"""
+  data: AutoDeploymentData!
+}
+
+"""
+DeleteProject
+
+"""
+type DeleteProject {
+  """Deleted status """
+  status: String!
+
+  """Whether the project can be deleted"""
+  details: String!
+}
+
+"""
+GraphQL query input object for retrieving an endpoint api definition
+
+"""
+input QueryComponentEndpointApiDefinitionInput {
+  componentId: String!
+  versionId: String!
+  endpointId: String!
+}
+
+"""
+GraphQL query input object for retrieving endpoints attach to a release
+
+"""
+input QueryComponentEndpointsInput {
+  componentId: String!
+  versionId: String!
+  options: QueryComponentEndpointOptions
+}
+
+"""
+Author
+
+"""
+type Author {
+  """Author name  """
+  name: String!
+
+  """Author email"""
+  email: String!
+
+  """Commited date  """
+  date: String!
+
+  """Author avatal url  """
+  avatarUrl: String
+}
+
+type AppEnvVersion {
+  environmentId: String!
+  releaseId: String!
+  release: AppEnvironment!
+}
+
+"""
+ByocConfig
+
+"""
+input ByocConfig {
+  dockerfilePath: String!
+  dockerContext: String!
+  srcGitRepoUrl: String!
+  srcGitRepoBranch: String!
+}
+
+type DeployedEnvironmentData {
+  deploymentCount: Int!
+  apiId: String
+  releaseId: String!
+  versionId: String!
+  version: String!
+  environmentId: String!
+  environmentChoreoName: String!
+  environmentName: String!
+  build: DeployedBuild!
+  deploymentStatus: String!
+  cron: String!
+  invokeUrl: String
+  configCount: Int
+}
+
+type DeployedEnvironment {
+  environmentId: String!
+  environmentChoreoName: String!
+  environmentName: String!
+  deployment: DeployedInformation
+}
+
+"""
+QueryComponentEndpointOptions for quering endpoint results
+
+"""
+input QueryComponentEndpointOptions {
+  filter: QueryComponentEndpointFilterOptions
+}
+
+"""
+RepositoryResponseDataMapper
+
+"""
+type RepositoryResponseDataMapper {
+  """Id"""
+  id: String!
+
+  """Code repository name"""
+  nameApp: String!
+
+  """Config repository name"""
+  nameConfig: String!
+
+  """Code organization name"""
+  organizationApp: String!
+
+  """Config organization name"""
+  organizationConfig: String!
+
+  """Branch"""
+  branch: String!
+
+  """Branch for source repo"""
+  branchApp: String!
+
+  """Code repository reference"""
+  repoCredRef: String!
+
+  """Config repository reference"""
+  gitOpsCredRef: String!
+
+  """Organization Id"""
+  orgId: Int!
+
+  """Project Id"""
+  projectId: String!
+
+  """Component Id"""
+  componentId: String!
+
+  """User managed git repositoty or not"""
+  isUserManage: Boolean!
+
+  """User manager repository PR information"""
+  managedPRs: [UserGitHubRepositoryPR!]
+
+  """sub path of the repository"""
+  appSubPath: String
+
+  """Container build configs"""
+  byocBuildConfig: ByocBuildConfig
+}
+
+"""
+BuildMapper
+
+"""
+type BuildMapper {
+  """Unique Id  """
+  id: String
+
+  """Version id  """
+  versionId: String!
+
+  """Build Id  """
+  buildId: String!
+
+  """Commit hash"""
+  commitHash: String
+
+  """Component Id  """
+  componentId: String!
+
+  """Created Date  """
+  createdDate: String!
+
+  """Enviornment specific revisions  """
+  environments: [EnvironmentRevisions!]!
+
+  """revision specific environments"""
+  revisions: [RevisionWithEnvs!]!
+}
+
+"""
+QueryComponentEndpointFilterOptions for filtering endpoint data
+
+"""
+input QueryComponentEndpointFilterOptions {
+  releaseIds: [String!]
+}
+
+type RudderDeployedBuild {
+  buildId: String!
+  deployedAt: String!
+  commitHash: String!
+  branch: String!
+  commit: Commit
+}
+
+type ProxyDeployment {
+  apiId: String!
+  environment: Environment!
+  lifecycleStatus: String!
+  version: String!
+  apiRevision: ApimRevision!
+  invokeUrl: String
+  deployedTime: Int
+  successDeployedTime: Int
+  build: ProxyBuild!
+  endpoint: String!
+  sandboxEndpoint: String!
+}
+
+"""
+InvokeData
+
+"""
+type InvokeData {
+  """Id for the API """
+  apiId: String
+
+  """Release Id  """
+  releaseId: String
+
+  """Version Id  """
+  versionId: String!
+
+  """Environment Id  """
+  environmentId: String!
+
+  """Environment name fron choreo """
+  environmentChoreoName: String!
+
+  """Environment name """
+  environmentName: String!
+  apimEnvName: String!
+  lifecycleStatus: String!
+
+  """Invoke Url  """
+  invokeUrl: String
+
+  """Proxy flag  """
+  isProxy: Boolean
+
+  """Version Name """
+  version: String!
+  apiRevision: ApimRevision
+}
+
+"""
+Represents Bitbucket app password type token.
+
+"""
+input BitbucketAppPasswordType {
+  appPassword: String!
+  userName: String!
+}
+
+"""
+EnvironmentRevisions
+
+"""
+type EnvironmentRevisions {
+  """Environment Id"""
+  id: String!
+
+  """Revision List  """
+  revisions: [Revision!]!
+}
+
+"""
+ApiVersion
+
+"""
+type ApiVersion {
+  """API version id  """
+  id: String!
+
+  """Created at timestamp"""
+  createdAt: String!
+
+  """Updated at timestamp """
+  updatedAt: String!
+
+  """Organization id"""
+  organizationId: String!
+
+  """Project id"""
+  projectId: String!
+
+  """API version (Ex:-1.0.0) """
+  apiVersion: String!
+
+  """Branch used for the version  """
+  branch: String
+
+  """Component Id  """
+  appId: String!
+
+  """Is latest flag  """
+  latest: Boolean!
+
+  """API accessibility """
+  accessibility: String
+
+  """Proxy name """
+  proxyName: String
+
+  """Proxy url  """
+  proxyUrl: String
+
+  """Proxy id which is the APIM API id"""
+  proxyId: String
+
+  """Version state"""
+  state: String
+
+  """Revision list"""
+  appEnvVersions: [AppEnvVersion!]
+}
+
+"""
+RepositoryDirectory contains information about a directory within a component related repository in Choreo.
+
+"""
+type RepositoryDirectory {
+  """name of the directory"""
+  name: String!
+}
+
+"""
+Promote
+
+"""
+input Promote {
+  apiVersionId: String!
+  sourceReleaseId: String!
+  targetReleaseId: String
+  targetEnvironmentId: String
+  cronFrequency: String
+}
+
+"""
+AutoDeploymentData
+
+"""
+type AutoDeploymentData {
+  """Auto Build ID"""
+  autoBuildId: String!
+
+  """Auto Build enabled flag"""
+  autoBuildEnabled: Boolean!
+
+  """Component ID"""
+  componentId: String!
+
+  """Version ID"""
+  versionId: String!
+
+  """Component ID"""
+  envId: String!
+}
+
+"""
+GraphQL mutation input object for updating endpoints
+
+"""
+input UpdateComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  releaseId: String!
+  endpointId: String!
+  displayName: String
+  apiContext: String
+  apiDefinitionPath: String
+  visibility: String
+}
+
+"""
+`UserGitHubRepositoryPR`
+
+"""
+type UserGitHubRepositoryPR {
+  """GitHub PR url  """
+  url: String!
+
+  """GitHub PR number  """
+  number: Int!
+
+  """state of the PR; either open or close."""
+  state: String!
+}
+
+"""
+RepositoryBranch
+
+"""
+type RepositoryBranch {
+  """Branch name  """
+  name: String!
+
+  """Is branch protected"""
+  protected: Boolean!
+
+  """Mark whether the branch is default branch"""
+  isDefault: Boolean!
+}
+
+"""
+ImageRegistry
+
+"""
+type ImageRegistry {
+  """id of the image registry  """
+  id: String!
+
+  """created at timestamp"""
+  createdAt: String!
+
+  """updated at timestamp"""
+  updatedAt: String!
+
+  """cloud connector id"""
+  cloudConnectorId: String!
+
+  """image repository name"""
+  imageRepositoryName: String!
+}
+
+"""
+EnvBuild
+
+"""
+type EnvBuild {
+  """Environment Id  """
+  environmentId: String!
+
+  """BuildRevisions  """
+  builds: [BuildRevisions!]!
+}
+
+type DeployedBuild {
+  buildId: String!
+  deployedAt: String!
+  commitHash: String!
+  commit: CommitHistory
+  branch: String!
+}
+
+"""
+IntegrationComponent
+
+"""
+type IntegrationComponent {
+  """Component Id  """
+  id: String!
+
+  """Created Timestamp  """
+  createdAt: String!
+
+  """Updated Timestamp """
+  updatedAt: String!
+
+  """Component Name  """
+  name: String!
+
+  """Organization Id  """
+  organizationId: String!
+
+  """Project Id"""
+  projectId: String!
+
+  """Organziation handler"""
+  orgHandle: String!
+
+  """Kubernetes type"""
+  type: String!
+
+  """Description  """
+  description: String!
+
+  """Image Registry Id"""
+  imageRegistryId: String!
+
+  """Image Registry"""
+  imageRegistry: ImageRegistry!
+
+  """Component type  """
+  componentType: String!
+
+  """Is http based"""
+  httpBased: Boolean!
+  handle: String!
+}
+
+"""
+ComponentsOptions
+
+"""
+input ComponentsOptions {
+  filter: ComponentsFilterOptions
+}
+
+"""
+DistinctComponentCount record
+
+"""
+type DistinctComponentCount {
+  """Component type"""
+  componentType: String!
+
+  """Component count"""
+  count: Int!
+}
+
+"""
+Represents a create common credential request.
+
+"""
+input CommonCredentialInput {
+  name: String!
+  type: String!
+  projectId: String
+  orgUuid: String!
+  bitbucketCredential: BitbucketAppPasswordType
+  gitPatCredential: GitPatType
+}
+
+"""
+DeploymentStatus
+
+"""
+type DeploymentStatus {
+  """Id  """
+  id: Int!
+
+  """Name  """
+  name: String!
+
+  """Conclusion  """
+  conclusion: String
+
+  """Status  """
+  status: String!
+
+  """Started time"""
+  startedAt: String
+
+  """Completed time """
+  completedAt: String
+
+  """SHA"""
+  sha: String
+
+  """Auto deployment enabled"""
+  isAutoDeploy: Boolean
+
+  """reason for deployment failure"""
+  failureReason: Int
+
+  """source repo commit id which triggered build"""
+  sourceCommitId: String
+}
+
+"""
+GraphQL mutation input object for promoting endpoints
+
+"""
+input PromoteComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  sourceReleaseId: String!
+  targetEnvironmentId: String!
+}
+
+"""
+CellDiagram service class provides the methods to get the cell diagram.
+
+"""
+type CellDiagram {
+  data: String
+  message: String
+  errorName: String
+  success: Boolean!
+}
+
+"""
+BuildRevision
+
+"""
+input BuildRevision {
+  buildId: String
+  componentId: String!
+  versionId: String!
+  commitHash: String
+  environmentId: String
+  revisionId: String
+  type: String
+}
+
+"""
+Deployment record
+
+"""
+input Deployment {
+  componentId: String!
+  versionId: String!
+  envId: String!
+  sha: String!
+  branch: String!
+  cron: String
+  shaDate: String
+}
+
+"""
+`GitHubOrgsAndRepositoriesForUser`
+
+"""
+type GitHubOrgsAndRepositoriesForUser {
+  """GitHub organzation name  """
+  orgName: String!
+
+  """GitHub repository list"""
+  repositories: [GitHubRepositoryForUser!]!
+}
+
+type ProxyBuild {
+  id: String!
+  baseRevisionId: String!
+  deployedRevisionId: String!
+}
+
+type Container {
+  id: String!
+  createdAt: String!
+  updatedAt: String!
+  image: Image
+}
+
+"""
+Version
+
+"""
+type Version {
+  """Version id  """
+  id: String!
+
+  """Created at  """
+  createdAt: String!
+
+  """Updated at """
+  updatedAt: String!
+
+  """API version  """
+  apiVersion: String!
+
+  """App Id"""
+  appId: String!
+
+  """Latest flag  """
+  latest: Boolean!
+
+  """Proxy name  """
+  proxyName: String!
+
+  """Proxy Url """
+  proxyUrl: String!
+
+  """Version status  """
+  state: String
+}
+
+"""
+ServiceStatus holds dependent service status
+
+"""
+type ServiceStatus {
+  """Service name"""
+  name: String!
+
+  """System status message """
+  message: String!
+
+  """System status"""
+  status: String!
+
+  """Is message visible in the console """
+  visible: Boolean!
+}
+
+"""
+Component Endpoint State Reason object that is exposed from the GraphQL which indicates 
+current state of the endpoint.
+
+"""
+type ComponentEndpointStateReason {
+  """Code indicates machine-readable value indicating the current state."""
+  code: String!
+
+  """Indicates a human-readable message for the current state."""
+  message: String!
+
+  """
+  Indicates an optional informative cause for the state for troubleshooting purpose.
+  """
+  details: String!
+
+  """Indicates the id of the worker that reported this state."""
+  workerId: String!
+}
+
+type UsageStatus {
+  threshold1Reached: Boolean!
+  threshold2Reached: Boolean!
+  currentUsage: Int!
+  tierId: String!
+}
+
+type GetCodeServerStatusResponse {
+  status: GetCodeServerStatusResponse_CodeServerStatus!
+  access_url: String!
+}
+
+"""
+DeleteComponent
+
+"""
+type DeleteComponent {
+  """Whether the component can be deleted"""
+  canDelete: Boolean!
+
+  """Deleted status """
+  status: String!
+  message: String!
+}
+
+"""
+CommitHistory
+
+"""
+type CommitHistory {
+  """Commit author  """
+  author: Author!
+
+  """Commit message  """
+  message: String!
+
+  """Git hash  """
+  sha: String!
+
+  """Lates"""
+  isLatest: Boolean!
+}
+
+"""
+Revision
+
+"""
+type Revision {
+  """Revision Environment Id  """
+  id: String!
+
+  """Revision Id  """
+  revisionId: String!
+
+  """Created Date  """
+  createdDate: String!
+
+  """Updated Date  """
+  updatedDate: String!
+  description: String
+
+  """Environments"""
+  environments: [String!]
+
+  """Is base revision"""
+  isBase: Boolean!
+}
+
+"""
+ProjectSchema
+
+"""
+input ProjectSchema {
+  name: String!
+  description: String!
+  version: String!
+  orgId: Int!
+  orgHandler: String
+  region: String
+  id: String
+}
+
+"""
+ComponentUpdateSchema
+
+"""
+input ComponentUpdateSchema {
+  displayName: String!
+  labels: String!
+  version: String!
+  description: String!
+  apiId: String
+  id: String!
+  orgHandler: String
+}
+
+"""
+Environment record
+
+"""
+type Environment {
+  id: String!
+
+  """Environment name  """
+  name: String!
+
+  """Organization Uuid"""
+  organizationUuid: String!
+
+  """Project Id """
+  projectId: String
+
+  """Description """
+  description: String!
+
+  """Promoted list"""
+  promoteFrom: [String!]
+
+  """Organization flag """
+  orgShared: Boolean!
+
+  """Choreo environment name  """
+  choreoEnv: String!
+
+  """Whether the environment is critical"""
+  critical: Boolean!
+  apiEnvName: String!
+  internalApiEnvName: String!
+  externalApiEnvName: String!
+
+  """Sandbox environment name in APIM"""
+  sandboxApiEnvName: String!
+  namespace: String!
+  vhost: String
+
+  """Sandbox vhosts"""
+  sandboxVhost: String
+
+  """Sandbox Environment id saved in APIM"""
+  apimSandboxEnvId: String
+
+  """Environment id saved in APIM"""
+  apimEnvId: String
+
+  """Whether the environment is migrating org level to project level"""
+  isMigrating: Boolean!
+}
+
+type Mutation {
+  createProject(project: ProjectSchema!): Project!
+  updateProject(project: ProjectSchema!): Project!
+  deleteProject(orgHandler: String, orgId: Int!, projectId: String!): DeleteProject!
+  deleteComponent(orgHandler: String!, componentId: String!, projectId: String!): Component!
+  deleteComponentV2(orgHandler: String!, componentId: String!, projectId: String!): DeleteComponent!
+  createComponent(component: ComponentSchema!): Component!
+  createByocComponent(component: ByocCreateComponentSchema!): ByocComponent!
+  createIntegrationComponent(component: IntegrationCreateComponentSchema!): IntegrationComponent!
+  createProjectComponent(project: ProjectSchema!, component: ComponentSchema!): Component!
+  updateComponent(component: ComponentUpdateSchema!): Component!
+  startCodeServer(orgHandler: String!, orgId: Int!, componentId: String!, projectId: String!, fidp: String!): String!
+  stopCodeServer(orgId: Int!, componentId: String!, projectId: String!): String!
+  promote(orgHandler: String, componentId: String!, promoteSchema: Promote!): String!
+  updateCronFrequency(orgHandler: String, componentId: String!, environmentId: String!, versionId: String!, cronFrequency: String!): String!
+  createVersion(orgHandler: String!, orgUuid: String!, componentId: String!, version: String!, componentType: String, apiId: String, branch: String, baseApiVersionId: String): Version!
+  deployComponent(deployment: Deployment!): TriggerDeploymentResMapper!
+  redeployDeployment(orgHandler: String!, componentId: String!, releaseId: String!, type: String!): String!
+  stopDeployment(orgHandler: String!, componentId: String!, releaseId: String!, type: String!): String!
+  createBuild(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  createBuildRevision(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  deleteBuild(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  createRevision(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  deleteRevision(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  deleteRevisionEnvironment(orgHandler: String!, build: BuildRevision!): BuildMapper!
+  obtainUserToken(authorizationCode: String!): ObtainUserTokenResponseData!
+  cancelDeploymentRun(componentId: String!, versionId: String!): CancelDeploymentResMapper!
+  updateApiAccessibility(componentId: String!, versionId: String!, accessibility: String!): ApiVersion!
+  handleEnableAutoBuild(componentId: String!, versionId: String!, envId: String!): AutoDeploymentStatus!
+  handleConfigInit(componentId: String!): ConfigInitStatus!
+  handleDisableAutoBuild(componentId: String!, versionId: String!, envId: String!): AutoDeploymentStatus!
+  updateByocBuildConfigurations(componentId: String!, dockerContext: String, dockerFilePath: String, oasFilePath: String): String!
+  updateOasFileConfigurations(componentId: String!, oasFilePath: String!): String!
+  createComponentEndpoint(input: CreateComponentEndpointInput!): ComponentEndpoint!
+  updateComponentEndpoint(input: UpdateComponentEndpointInput!): ComponentEndpoint!
+  deleteComponentEndpoint(input: DeleteComponentEndpointInput!): ComponentEndpoint!
+  promoteComponentEndpoints(input: PromoteComponentEndpointInput!): [ComponentEndpoint!]!
+  generateComponentEndpoints(input: GenerateComponentEndpointInput!): [ComponentEndpoint!]!
+  createCommonCredential(credential: CommonCredentialInput!): CommonCredentialService!
+  deleteCommonCredential(orgUuid: String!, projectId: String, credentialId: String!): String!
+  updateCommonCredential(projectId: String, credentialId: String!, credential: CommonCredentialInput!): CommonCredentialService!
+}
+
+"""
+GraphQL query input object for retrieving an endpoint
+
+"""
+input QueryComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  releaseId: String!
+  endpointId: String!
+}
+
+type ReleaseIdToObservabilityIdMapping {
+  releaseId: String!
+  verzion: String
+  versionNotFound: Boolean
+  obsId: String
+  obsIdNotFound: Boolean
+}
+
+"""
+Component Endpoint Api Definition object that is exposed from the GraphQL
+
+"""
+type ComponentEndpointApiDefinition {
+  """Base64 encoded api definition"""
+  content: String!
+}
+
+"""
+`UserGitHubRepositoryValidationData`
+
+"""
+type UserGitHubRepositoryValidationData {
+  """flag to indicate whether the repository is valid or not.  """
+  isValid: Boolean!
+
+  """additional message for the repository  """
+  message: String!
+}
+
+"""
+GraphQL mutation input object for creating endpoints
+
+"""
+input CreateComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  releaseId: String!
+  port: Int!
+  protocol: String
+  type: String
+  displayName: String!
+  apiContext: String
+  apiDefinitionPath: String
+  visibility: String
+}
+
+"""
+Config Init status
+
+"""
+type ConfigInitStatus {
+  """ Success flag  """
+  success: Boolean!
+
+  """ Message  """
+  message: String!
+}
+
+"""
+BuildMapping
+
+"""
+type BuildMapping {
+  """Unique Id  """
+  id: String!
+
+  """Version id  """
+  versionId: String!
+
+  """Build Id  """
+  buildId: String!
+
+  """Commit hash """
+  commitHash: String
+
+  """Component Id  """
+  componentId: String!
+
+  """Created Date  """
+  createdDate: String!
+
+  """Commit Message """
+  commitMessage: String
+
+  """Revisiona array"""
+  revisions: [Revision!]!
+}
+
+"""
+`GitHubRepositories`
+
+"""
+type GitHubRepositoryForUser {
+  """GitHub repository name """
+  name: String!
+}
+
+"""
+CancelDeploymentResMapper
+
+"""
+type CancelDeploymentResMapper {
+  """ Success flag  """
+  success: Boolean!
+
+  """ Message  """
+  message: String!
+}
+
+type CommonCredentialService {
+  id: String!
+  createdAt: String!
+  name: String!
+  organizationId: Int!
+  organizationUuid: String!
+  projectId: String
+  type: String!
+  scope: String!
+  referenceToken: String!
+  metadata: String!
+}
+
+"""
+ComponentDeleteAvailability
+
+"""
+type ComponentDeleteAvailability {
+  """Component Id"""
+  componentId: String
+
+  """Whether the component can be deleted"""
+  canDelete: Boolean!
+
+  """Message if there is an issue  """
+  message: String!
+}
+
+"""
+IntegrationCreateComponentSchema
+
+"""
+input IntegrationCreateComponentSchema {
+  name: String!
+  orgId: Int!
+  orgHandler: String!
+  projectId: String!
+  labels: String!
+  description: String!
+  componentType: String!
+  userId: Int
+  srcGitRepoUrl: String!
+  srcGitRepoBranch: String!
+  port: Int
+  accessibility: String
+  displayName: String!
+  version: String!
+  oasFilePath: String
+  repositorySubPath: String
+  libSubPath: String
+}
+
+"""
+TriggerDeploymentResMapper
+
+"""
+type TriggerDeploymentResMapper {
+  """ Success flag  """
+  success: Boolean!
+
+  """ Message  """
+  message: String!
+}
+
+"""
+ByocBuildConfig
+
+"""
+type ByocBuildConfig {
+  """Id"""
+  id: String!
+
+  """Repository id"""
+  repositoryId: String!
+
+  """Container Id"""
+  containerId: String!
+
+  """Component Id """
+  componentId: String!
+
+  """Docker file path"""
+  dockerfilePath: String!
+
+  """Docker context  """
+  dockerContext: String!
+
+  """Main container falg"""
+  isMainContainer: Boolean!
+
+  """OAS file path"""
+  oasFilePath: String
+}
+
+"""
+Branch
+
+"""
+type Branch {
+  """Branch name  """
+  name: String!
+
+  """Is branch protected  """
+  protected: Boolean!
+
+  """ApiVersion list"""
+  apiVersion: [String!]!
+}
+
+"""
+ CommitInformation record
+
+"""
+type CommitInformation {
+  """Commit hash  """
+  sha: String
+
+  """ Date    """
+  date: String
+
+  """Success flag    """
+  success: Boolean!
+
+  """Message  """
+  message: String!
+}
+
+"""Component  """
+type Component {
+  name: String!
+  version: String
+  labels: [String!]!
+  project: Project!
+  description: String!
+  ownerName: String
+  orgId: Int!
+  orgUuid: String
+  handler: String
+  orgHandler: String!
+  canDelete: Boolean
+  repository: RepositoryResponseDataMapper
+  projectId: String!
+  apiId: String
+  deleteReason: String
+  displayName: String!
+  displayType: String!
+  createdAt: String
+  updatedAt: String
+  id: String
+  apiVersions: [ApiVersionEntry!]
+  httpBased: Boolean
+  initStatus: String
+  isMigrationCompleted: Boolean!
+}
+
+"""
+ComponentsFilterOptions
+
+"""
+input ComponentsFilterOptions {
+  type: String
+  types: [String!]
+  limit: Int!
+  offset: Int!
+}
+
+"""
+SystemStatus record includes all the dependent services summarize status and individual component status.
+
+"""
+type SystemStatus {
+  """Dependent services summarize status """
+  status: Status!
+
+  """Individual service status """
+  serviceStatus: [ServiceStatus!]!
+}
+
+"""
+`ObtainUserTokenResponseData` - response for exchanging oauth2 authorization code for a token
+
+"""
+type ObtainUserTokenResponseData {
+  """flag to indicate success/failure"""
+  success: Boolean!
+
+  """additional details"""
+  message: String!
+}
+
+"""
+ByocComponent
+
+"""
+type ByocComponent {
+  """Component Id  """
+  id: String!
+
+  """Created Timestamp  """
+  createdAt: String!
+
+  """Updated Timestamp """
+  updatedAt: String!
+
+  """Component Name  """
+  name: String!
+
+  """Organization Id  """
+  organizationId: String!
+
+  """Project Id"""
+  projectId: String!
+
+  """Organziation handler"""
+  orgHandle: String!
+
+  """Kubernetes type"""
+  type: String!
+
+  """Description  """
+  description: String!
+
+  """Image Registry Id"""
+  imageRegistryId: String!
+
+  """Image Registry"""
+  imageRegistry: ImageRegistry!
+
+  """Component type  """
+  componentType: String!
+
+  """Is http based"""
+  httpBased: Boolean!
+  handle: String!
+}
+
+"""
+BuildRevisions
+
+"""
+type BuildRevisions {
+  """Unique Id  """
+  id: String!
+
+  """Version id  """
+  versionId: String!
+
+  """Build Id  """
+  buildId: String!
+
+  """Commit hash """
+  commitHash: String
+
+  """Component Id  """
+  componentId: String!
+
+  """Created Date  """
+  createdDate: String!
+
+  """revisions"""
+  revisions: [Revision!]!
+}
+
+type BuildLogs {
+  integrationProjectBuild: String!
+}
+
+"""
+QuotaLimitResponse 
+
+"""
+type QuotaLimitResponse {
+  """Rate Limit Status of Running Components"""
+  isRunningComponentsLimited: Boolean!
+
+  """Limit Available for the Tier"""
+  tierLimit: Int!
+
+  """Number of Running Components"""
+  runningComponentsCount: Int!
+}
+
+"""
+DeploymentStatusRes
+
+"""
+type DeploymentStatusRes {
+  """Success flag"""
+  success: Boolean!
+
+  """Message"""
+  message: String!
+
+  """DeploymentStatusData"""
+  data: [DeploymentStatus!]!
+}
+
+"""
+Contains basic invoke data of the services.
+This type is fetched especially for Triggers, because some of the triggers
+need the invoke URL of the service, before the deployment.
+
+"""
+type BasicInvokeData {
+  """ID of the environment"""
+  environmentId: String!
+
+  """Environment name from Choreo (dev, prod)"""
+  environmentName: String!
+
+  """Invoke url of the service"""
+  invokeUrl: String!
+}
+
+"""
+Commit
+
+"""
+type Commit {
+  """Commit author  """
+  author: Author!
+
+  """Commit message  """
+  message: String!
+
+  """Git hash  """
+  sha: String!
+
+  """Lates"""
+  isLatest: Boolean!
+}
+
+type AppEnvironment {
+  id: String!
+  createdAt: String!
+  updatedAt: String!
+  environmentId: String
+  environment: String
+  gitHash: String
+  gitOpsHash: String
+  imageId: String
+  cronJobFrequency: String!
+  deploymentStatus: String!
+  unDeployed: Boolean!
+  containers: [Container!]
+  metadata: EnvironmentMetadata!
+}
+
+"""
+ComponentSchema
+
+"""
+input ComponentSchema {
+  name: String!
+  orgId: Int!
+  orgHandler: String!
+  displayName: String!
+  displayType: String!
+  projectId: String!
+  labels: String!
+  version: String!
+  description: String!
+  accessibility: String
+  ballerinaVersion: String
+  ballerinaTemplate: String
+  apiId: String
+  sampleTemplate: String
+  id: String
+  httpBase: Boolean
+  triggerID: Int
+  triggerChannels: String
+  srcGitRepoUrl: String
+  repositorySubPath: String
+  repositoryType: String
+  repositoryBranch: String
+  initializeAsBallerinaProject: Boolean
+  enableCellDiagram: Boolean
+}
+
+"""
+ApimRevisionApiInfo
+
+"""
+type ApimRevisionApiInfo {
+  """Api Id """
+  id: String!
+}
+
+"""
+RevisionWithEnvs
+
+"""
+type RevisionWithEnvs {
+  """Revision Environment Id  """
+  id: String!
+
+  """Environment Id array """
+  environments: [String!]!
+
+  """Revision Id  """
+  revisionId: String!
+
+  """Created Date  """
+  createdDate: String!
+
+  """Updated Date"""
+  updatedDate: String!
+
+  """Is a based revision"""
+  isBase: Boolean!
+}
+
+"""
+GraphQL mutation input object for deleting endpoints
+
+"""
+input DeleteComponentEndpointInput {
+  componentId: String!
+  versionId: String!
+  releaseId: String!
+  endpointId: String!
+}
+

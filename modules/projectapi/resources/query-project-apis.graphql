@@ -1,0 +1,15 @@
+query projectApis($orgId: Int!, $orgHandler: String!) {
+  projects(orgId: $orgId) {
+    id
+    orgId
+    name
+    handler
+    extendedHandler
+    components (orgHandler: $orgHandler) {
+      id,
+      apiVersions {
+        proxyId
+      }
+    }
+  }
+}

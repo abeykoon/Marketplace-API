@@ -24,15 +24,9 @@ public type CommonAttributes record {
     string id;
     string name; 
     ResourceType resourceType;
-    Visibility visibility;
-    string description;
-    UsageDetail usageStats;
-    string[] keywords?;
+    Owner owner;
     string iconPath;
 };
-
-# Visibility of a resource
-public type Visibility Internal|External;
 
 # Represents visibility attributes of an internally exposed resouce of Choreo marketplace
 #
@@ -40,11 +34,13 @@ public type Visibility Internal|External;
 # + projectName - Name of the Choreo project from which API is exposed
 # + componentName - Name of the Choreo component from which API is exposed 
 # + isPreRelease - True if API is exposed as a pre-release inside Choreo
-public type Internal record {
-    string organizationName;
+public type Owner record {
+    string orgId;
+    string orgName;
     string projectName;
+    string projectId;
     string componentName;
-    boolean isPreRelease;
+    string componentId;
 };
 
 # Represents visibility attributes of an externally exposed resouce of Choreo marketplace

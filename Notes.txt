@@ -75,3 +75,20 @@
     APIEndpoint[] endpoints?;
 
 
+==== Query by org =====
+
+query projectApis($orgId: Int!, $projectId: String!, $orgHandler: String!) {
+  project(orgId: $orgId, projectId: $projectId) {
+    id
+    orgId
+    name
+    handler
+    extendedHandler
+    components (orgHandler: $orgHandler) {
+      id,
+      apiVersions {
+        proxyId
+      }
+    }
+  }
+}

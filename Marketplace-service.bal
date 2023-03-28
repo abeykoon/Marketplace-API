@@ -1,18 +1,20 @@
 import ballerina/http;
-
+import choreo_marketplace.devportal as dp;
+import ballerina/graphql;
+import choreo_marketplace.projectapi as abc;
 
 service /registry on new http:Listener(9000) {
-    
-    function init() returns error? {
 
+    function init() returns error? {
+        
     };
 
     # Search for resources in the marketplace 
     #
     # + query - Search query   
-    # + orgName - Name of the Choreo organization within which resources are published. 
+    # + orgId - Name of the Choreo organization within which resources are published. 
     #             If speficied, search will return resouces only exposed by this organiztion.    
-    # + projectName - Name of the Choreo project within which resources are published. 
+    # + projectId - Name of the Choreo project within which resources are published. 
     #             If speficied, search will return resouces only exposed by this project.   
     #             `orgName` must be defined along with this parameter. 
     # + keywords - List of keywords to filter the search  
@@ -20,27 +22,20 @@ service /registry on new http:Listener(9000) {
     # + offset - Pagination offset  
     # + sort - Sorting parameters of the search 
     # + return - List of marketplace resources matches to search
-    resource function get apis(string? query, string? orgName, string? projectName, string[]? keywords,
+    resource function get apis(string? query, string? orgHandler, string? orgId, string? projectId, string[]? keywords,
                  int 'limit = 20, int offset = 0, string sort = "org,ASC") returns Api[]|error {
-       return error("djdfjd");
+
+        return searchApis(query, orgHandler, orgId, projectId, keywords, 'limit, offset, sort);
+
     };
 
     # Get specific API by Id(latest)
     #
     # + apiId - Id of the api 
     # + return - Api with latest version detail included, along with other versions numbers
-    resource function get apis/[string apiId] () returns Api|error {
-        return error("djdfjd");
+    resource function get apis/[string apiId] (string orgId, string orgHander) returns Api|error {
+        return getApibyId(orgId, orgHander, apiId);
     }
-
-    # Get specific API version 
-    #
-    # + apiId - Id of the api 
-    # + version - Version of the api to get details for
-    # + return - List of version numbers 
-    resource function get apis/[string apiId]/[string 'version] () returns Api|error {
-         return error("djdfjd");
-    };
 
     # Get API by name
     #
@@ -67,8 +62,8 @@ service /registry on new http:Listener(9000) {
 
     # Get popular APIs
     # + return - List of popular APIs
-    resource function get apis/popular() returns Api[]|error {
-        return [];
+    resource function get apis/popular(string orgHander, string orgId, int maxCount) returns Api[]|error {
+        return searchApis(orgHandler = orgHander, orgId = orgId, offset = 0, 'limit = maxCount, "rating, DSC")
     };
 
 

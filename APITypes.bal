@@ -6,11 +6,17 @@ const DEFAULT_API_ICON_PATH = "";
 # + iconPath - Path to the icon for API
 # + apiVersions - List of versions
 public type Api record {|
+    boolean isPublic;
     *CommonAttributes;
-    string iconPath = DEFAULT_API_ICON_PATH;
     *ApiVersion;
-    string[] apiVersions;
+    ApiVersionInfo[]? apiVersions;
 |};
+
+public type ApiVersionInfo record {|
+    string apiId;
+    string 'version;
+|};
+    
 
 # Version of an API 
 #
@@ -20,11 +26,21 @@ public type Api record {|
 # + Idl - Interface Definition associated with the API version 
 # + endpoints - List of endpoints API is accessible
 public type ApiVersion record {|
-    string createdDate;
+    string apiId;
     string 'version;
-    string documentation;
+    string createdDate;
+    boolean isPreRelease;
+    string description?;
+    UsageDetail usageStats;
+    string[] keywords?;
+    string documentation?;
     IDL Idl;
     APIEndpoint[] endpoints?;
+|};
+
+public type ApiOwner record {|
+    readonly string apiId;
+    *Owner;
 |};
 
 # Types of Interface Definition Languages associated 
@@ -92,3 +108,4 @@ public type SubscriptionRequest record {|
     string apiAppId;
     string apiId;
 |};
+
