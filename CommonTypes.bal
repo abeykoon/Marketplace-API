@@ -10,6 +10,10 @@ public enum ResourceType {      //can change
     PolicyType
 };
 
+public enum DocType {
+    ApiDoc  //Doc describing an API 
+}
+
 # Common attributes of marketplace resources
 #
 # + id - Across choreo unique id of resource  
@@ -25,7 +29,7 @@ public type CommonAttributes record {
     string name; 
     ResourceType resourceType;
     Owner owner;
-    string iconPath;
+    boolean hasThumbnail;
 };
 
 # Represents visibility attributes of an internally exposed resouce of Choreo marketplace
@@ -65,19 +69,28 @@ public type KeywordInfo record {|
 # + rating - Rating given by users (1-5)
 public type UsageDetail record {|
     int usageCount;
-    int rating;
+    string? rating;
 |};
 
-# Structure of request to add a rating for a resource 
-#
-# + resourceId - Id of the resource  
-# + rateValue - Rating (1-5)
-# + comment - Optional comment
-public type ResourceRateRequest record {|
-    string resourceId;
-    int rateValue;
-    string comment?;
-|};
+public type RatingRequest record {
+    string apiId;
+    string ratedBy?;
+    int rating;
+};
+
+public type Rating record {
+    string ratingId?;
+    *RatingRequest;
+};
+
+public type Document record {
+    string documentId;
+    string name;
+    DocType docType; //type of doc, there can be a set of defined docs
+    string summary?;
+    string sourceType;  //type of source inside - text, xml, json
+    string sourceUrl;
+};
 
 
 

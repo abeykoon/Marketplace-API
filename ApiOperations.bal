@@ -151,11 +151,11 @@ function sortApis(Api[] apis, string sortingParam) returns Api[] {
         "createdDate" => {
             if isAcescending {
                 return from var e in apis
-                    order by e.createdDate ascending    //check
+                    order by e.createdTime ascending    //check
                     select e;
             } else {
                 return from var e in apis
-                    order by e.createdDate descending   //check
+                    order by e.createdTime descending   //check
                     select e;
             }
         }
@@ -163,27 +163,80 @@ function sortApis(Api[] apis, string sortingParam) returns Api[] {
     
 }
 
-function populateApi(dp:API devPortalApi, ApiOwner apiOwner, ApiVersionInfo[]? versionsOfApi) returns Api {
-    
+function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versionsOfApi) returns Api {
+
+    boolean isPreRelease = false; 
+    if dpApi.lifeCycleStatus == API_LIFECYCLE_PROTOTYPED {
+        isPreRelease = true;
+    }
+
     Api api = {
-        isPublic: false, //TODO find
-        id: devPortalApi.name,
-        name: devPortalApi.name,
+        isPublic: isPublicApi(dpApi),
+        id: dpApi.name,
+        name: dpApi.name,
         resourceType: ApiType,
-        owner: {orgId: apiOwner.orgId, orgName: apiOwner.orgName, projectName: apiOwner.projectName, projectId: apiOwner.projectId, componentName: apiOwner.componentName, componentId: apiOwner.componentName},
-        iconPath: devPortalApi.thumbnailUri ?: "",
-        apiId: devPortalApi.id,
-        'version: devPortalApi.'version,
-        createdDate: devPortalApi.createdTime, //TODO : update to created time
-        isPreRelease: false, //TODO find
-        description: devPortalApi.description,
-        usageStats: {usageCount: 0, rating: devPortalApi.avgRating},
-        keywords: [], //TODO find
-        documentation: devPortalApi.description, //TODO: find
-        Idl: {idlLocation: "", idlType: OpenAPI}, //TODO: find
-        endpoints: [], //TODO : find
+        owner: apiOwner,
+        hasThumbnail: dpApi.hasThumbnail,   //considering this, FE has to fetch the thubnail 
+        apiId: dpApi.id ?: "",
+        'version: dpApi.'version,
+        createdTime: dpApi.createdTime ?: "",    //format 2022-07-12 10:38:55.295
+        isPreRelease: isPreRelease, 
+        description: dpApi.description,
+        usageStats: {usageCount: 0, rating: dpApi.avgRating},
+        keywords: dpApi.tags, 
+        scopes: getApiScopeNames(dpApi),   
+        businessPlans: getBusinessPlans(dpApi)  
+        Idl: {idlLocation: "", idlType: dpApi.'type}, //TODO: find (possible values websocket, HTTP, graphQL, SOAPTOREST) - user has to get
+        endpoints: [],  //get environmentDisplayName and URLs.https (else) or URLs.wss (for websockets) depending on the type 
         apiVersions: versionsOfApi
     };
+}
+
+function getApiEndpoints(dp:API dpApi) returns APIEndpoint[]|error {
+
+}
+
+function getApiScopeNames(dp:API dpApi) returns string[] {
+    dp:ScopeInfo[]? scopes = dpApi.scopes;
+    if scopes is dp:ScopeInfo[] {
+        string [] scopeNames = from dp:ScopeInfo scope in scopes
+                                select scope.name ?: "";
+        return scopeNames;
+    } else {
+        return [];
+    }
+}
+
+function getBusinessPlans(dp:API dpApi) returns string[] {
+    dp:API_tiers[]? apiTiers = dpApi.tiers;
+    if apiTiers is dp:API_tiers[] {
+        string[] apiTierNames = from dp:API_tiers tier in apiTiers
+                                select tier.tierName ?: "";
+        return apiTierNames;
+    }
+}
+
+function isPublicApi(dp:API dpApi) returns boolean {
+    boolean isPublic = false;
+    dp:APIInfo_additionalProperties[]? additionalProps = dpApi.additionalProperties;
+    if additionalProps is dp:APIInfo_additionalProperties[] {
+        dp:APIInfo_additionalProperties[] accessibilityProperty = from dp:APIInfo_additionalProperties property in additionalProps
+            where property.name == API_ACCESSIBILTY_PROPERTY_KEY
+            select property;
+        if accessibilityProperty[0].value == API_ACCESSIBILTY_PROPERTY_VALUE_EXTENAL {
+            isPublic = true;
+        }
+
+    }
+}
+
+function getIconUrl(dp:API api) returns string|error {
+    if api.hasThumbnail {
+        dp:Client devPotalClient = createDevPotalClient();
+        devPotalClient->
+    } else {
+        return "";
+    }
 }
 
 function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName) returns ApiVersionInfo[] {
@@ -200,6 +253,31 @@ function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName)
     return apiVersionMetaInfo;
 }
 
+function getAllApiDocuments(string apiId) returns Document[]|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:DocumentList documentInfo = check devPotalClient->/apis/[apiId]/documents('limit=200);
+    dp:Document[]? documents = documentInfo.list;
+    if documents is dp:Document[] {
+        Document[] apiDocs = from dp:Document document in documents
+                            select {
+                                documentId: document.documentId ?: "",
+                                name: document.name, 
+                                docType: ApiDoc,
+                                summary: document.summary,
+                                sourceType: document.sourceType,
+                                sourceUrl: document.sourceUrl ?: ""
+                            };
+        return apiDocs;
+    } else {
+        return [];
+    }
+}
+
+function getApiDocumentContent(string apiId , string documentId) returns http:Response|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    return devPotalClient->/apis/[apiId]/documents/[documentId]/content();
+}
+
 function getApisofProject(string projectId, Api[] allApisOfOrg) returns Api[] {
     return from Api api in allApisOfOrg
         where api.owner.projectId == projectId
@@ -212,6 +290,122 @@ function getApisOfOtherProjects(string projectId, Api[] allApisOfOrg) returns Ap
         where api.owner.projectId != projectId
         order by api.name
         select api;
+}
+
+function getAllKeywords() returns KeywordInfo[]|error {     //how to limit to a org
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:TagList apiTagInfo = check devPotalClient ->/tags('limit = 100);
+    dp:Tag[]? apiTags = apiTagInfo.list;
+    if apiTags is dp:Tag[] {
+        KeywordInfo [] keywords = from dp:Tag apiTag in apiTags
+                                select {
+                                    keyword: apiTag.value,
+                                    count: apiTag.count
+                                };
+        return keywords;
+    } else {
+        return [];
+    }
+}
+
+function getAppApplications() returns ApiApp[]|error {    //how to limit to org
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:ApplicationList applicationInfo = check devPotalClient->/applications();
+    dp:ApplicationInfo[]? dpApps = applicationInfo.list;
+    if dpApps is dp:ApplicationInfo[] {
+        ApiApp[] apiApps = from dp:ApplicationInfo dpApp in dpApps
+                            select {
+                                id: dpApp.applicationId ?: "", 
+                                name: dpApp.name ?: "",
+                                description: dpApp.description,
+                                environmentId: "",          //TODO:check
+                                subscribedEndpoints: []   //TODO: find
+                            } ;                             //TODO: check scopes and owner is important - attributes.scopes (comma sep), 
+        return apiApps;
+    }
+}
+
+function getSubscriptionInfo(string applicationId) returns string[]|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:SubscriptionList subscriptionResponse = check devPotalClient->/subscriptions(applicationId);
+    dp:Subscription[]? subscriptions = subscriptionResponse.list;
+    if subscriptions is dp:Subscription[] {
+        subscriptions[0].apiInfo.name
+    }
+
+}
+
+function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowResponse|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:Application devPortalApp = {
+        name: appInfo.name,
+        throttlingPolicy: "",   //TODO: mandatory //resource isolated function get 'throttling\-policies/[string policyLevel] , policyLevel=application, get names (10PerMin)
+        description: appInfo.description
+    };
+    dp:WorkflowResponse|dp:Application appCreationResult = check devPotalClient->/applications.post(devPortalApp);
+    if appCreationResult is dp:Application {
+        ApiApp apiApp = {
+            name: appCreationResult.name,
+            id: check appCreationResult.applicationId.ensureType(string),
+            description: appCreationResult.description,
+            environmentId: "",
+            subscribedEndpoints: []
+        };
+        return apiApp;
+    } else if appCreationResult is dp:WorkflowResponse {
+        ApiWorkflowResponse workflowRespose = {
+            workflowStatus: appCreationResult.workflowStatus,
+            jsonPayload: appCreationResult.jsonPayload
+        };
+        return workflowRespose;
+    }
+}
+
+function createSubscription(SubscriptionRequest subscriptionRequest) returns ApiWorkflowResponse|ApiSubscription|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:Subscription dpSub = {
+        applicationId: subscriptionRequest.apiAppId,
+        throttlingPolicy: "",   //Should be one of businessPlan names of the API being subscribed to
+        apiId: subscriptionRequest.apiId     //TODO: check why this is not mandatory 
+    };
+    dp:WorkflowResponse|dp:Subscription subsriptionResult = check devPotalClient->/subscriptions.post(dpSub);
+    if subsriptionResult is dp:Subscription {
+        ApiSubscription subscription = {
+            subscriptionId: subsriptionResult.subscriptionId ?: "",
+            apiId: subsriptionResult.apiId ?: "",
+            apiAppId: subsriptionResult.applicationId,
+            throttlingPolicy: subsriptionResult.throttlingPolicy
+        };
+        return subscription;
+    } else if subsriptionResult is dp:WorkflowResponse {
+        ApiWorkflowResponse workflowRespose = {
+            workflowStatus: subsriptionResult.workflowStatus,
+            jsonPayload: subsriptionResult.jsonPayload
+        };
+        return workflowRespose;
+    }
+}
+
+function rateApiVersion(RatingRequest ratingRequest) returns Rating|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    dp:Rating dpRating = {
+        apiId: ratingRequest.apiId,
+        rating: ratingRequest.rating,
+        ratedBy: ratingRequest.ratedBy
+    };
+    dp:Rating ratingResponse = check devPotalClient->/apis/[ratingRequest.apiId]/user\-rating.put(dpRating);
+    Rating apiRating =  {
+        ratingId: ratingResponse.ratingId,
+        apiId: ratingResponse.apiId ?: "", 
+        ratedBy: ratingResponse.ratedBy, 
+        rating: ratingResponse.rating
+    };
+    return apiRating;
+}
+
+function getApiThubnail(string apiId) returns http:Response|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    return devPotalClient->/apis/[apiId]/thumbnail();
 }
 
 function removeDuplicates(string[] strArr) returns string[] {

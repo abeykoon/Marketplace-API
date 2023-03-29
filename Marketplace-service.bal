@@ -63,9 +63,8 @@ service /registry on new http:Listener(9000) {
     # Get popular APIs
     # + return - List of popular APIs
     resource function get apis/popular(string orgHander, string orgId, int maxCount) returns Api[]|error {
-        return searchApis(orgHandler = orgHander, orgId = orgId, offset = 0, 'limit = maxCount, "rating, DSC")
+        return searchApis('limit = maxCount, offset = 0, sort = "rating, DSC", orgHandler = orgHander, orgId = orgId);
     };
-
 
     # Search for keywords of resources in the marketplace 
     #
@@ -73,18 +72,15 @@ service /registry on new http:Listener(9000) {
     # + projectName - Name of the Choreo project within which keyword search needs to operate  
     # + return - List of keywords matching search 
     resource function get apis/keywords(string? orgName, string? projectName) returns KeywordInfo[]|error {
-        return [
-            {keyword: "business management/ERP", count: 6}, 
-            {keyword: "billing/weekly calc", count: 2}
-        ];
+        getAllKeywords()
     }
 
     # Rate a given resource 
     #
     # + rateRequest - ResourceRateRequest payload 
     # + return - Error if unsuccessful
-    resource function post apis/rating (@http:Payload ResourceRateRequest rateRequest) returns error? {
-
+    resource function post apis/rating (@http:Payload RatingRequest rateRequest) returns error? {
+        rateApiVersion(rateRequest);
     }
 
     # Get APIM applications visible to the user within the Choreo organization
@@ -94,15 +90,15 @@ service /registry on new http:Listener(9000) {
     # + environmentId - Id of the environment 
     # + return - List of ApiApp details
     resource function get apis/apiApps(string userId, string orgId, string environmentId) returns ApiApp[]|error {
-        return [];
+        return getAppApplications();
     }
 
     # Create an APIM application 
     #
     # + apiApp - Input details of the APIM app to create
     # + return - Created APIM app or error
-    resource function post apis/apiApps(@http:Payload CreatableApiApp apiApp) returns ApiApp|error {   
-        return {id: "weewueh23399348945", name: "abc-def-app", description: "", environmentId: "skjdkfjdfddfd", subscribedEndpoints:[]};
+    resource function post apis/apiApps(@http:Payload CreatableApiApp apiApp) returns ApiApp|ApiWorkflowResponse|error {   
+        return createApplication(apiApp);
     }
 
     # Subscribe APIM application to an API
@@ -110,8 +106,28 @@ service /registry on new http:Listener(9000) {
     # + apiAppId - APIM application to use
     # + subcriptionRequest - SubscriptionRequest input details
     # + return - Error if unsuceesful 
-    resource function post apis/apiApps/[string apiAppId]/subscription(@http:Payload SubscriptionRequest subcriptionRequest) returns error? {
-        
+    resource function post apis/subscriptions(@http:Payload SubscriptionRequest subcriptionRequest) returns ApiWorkflowResponse|ApiSubscription|error? {
+        ApiWorkflowResponse|ApiSubscription subscriptionResponse = check createSubscription(subcriptionRequest);
     }
 
+    resource function get apis/[string apiId]/thumbnail() returns http:Response|error {
+        return getApiThubnail(apiId);
+    }
+
+    resource function get apis/[string apiId]/documents() returns Document[]|error {
+        return getAllApiDocuments(apiId);
+    }
+
+    resource function get apis/[string apiId]/documents/[string documentId]/content() returns http:Response|error {
+        return getApiDocumentContent(apiId, documentId);
+    }
+    //add another resource  resource isolated function get apis/[string apiId]/documents
+
+            //to get IDL 
+        //resource    isolated function get apis/[string apiId]/swagger
+        //resource isolated function get apis/[string apiId]/'graphql\-schema
+        //resource isolated function get apis/[string apiId]/wsdl(   
+    
+    
+    //ADD ?/&organizationId=<uuid> to all API Calls       - 
 }

@@ -866,8 +866,8 @@ public type API_endpointURLs record {
 };
 
 public type Tag record {
-    string value?;
-    int count?;
+    string value;
+    int count;
 };
 
 public type MonetizationInfo record {

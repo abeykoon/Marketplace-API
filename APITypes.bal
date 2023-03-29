@@ -28,13 +28,14 @@ public type ApiVersionInfo record {|
 public type ApiVersion record {|
     string apiId;
     string 'version;
-    string createdDate;
+    string createdTime;
     boolean isPreRelease;
     string description?;
     UsageDetail usageStats;
     string[] keywords?;
-    string documentation?;
     IDL Idl;
+    string[]? scopes;
+    string[] businessPlans;
     APIEndpoint[] endpoints?;
 |};
 
@@ -89,6 +90,13 @@ public type ApiApp record {|
     APIEndpoint[] subscribedEndpoints;
 |};
 
+public type ApiSubscription record {|
+    string subscriptionId;
+    *SubscriptionRequest;
+    string throttlingPolicy;
+    string status?;
+|};
+
 # Defines information required to create a APIM application
 #
 # + name - Name of the application  
@@ -96,9 +104,16 @@ public type ApiApp record {|
 # + environmentId - Choreo environment associated with the application
 public type CreatableApiApp record {|
     string name;
-    string description;
+    string description?;
     string environmentId; //can change as per future APIM updates
 |};
+
+public type ApiWorkflowResponse record {
+    # This attribute declares whether this workflow task is approved or rejected.
+    string workflowStatus;
+    # Attributes that returned after the workflow execution
+    string jsonPayload?;
+};
 
 # Structure of request to subscribe an APIM app to an API
 #
@@ -108,4 +123,5 @@ public type SubscriptionRequest record {|
     string apiAppId;
     string apiId;
 |};
+
 
