@@ -170,6 +170,7 @@ function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versions
         isPreRelease = true;
     }
 
+    //Documentation and IDL info not included for perf reasons, fetch them by apiId IF NEEDED
     Api api = {
         isPublic: isPublicApi(dpApi),
         id: dpApi.name,
@@ -185,15 +186,37 @@ function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versions
         usageStats: {usageCount: 0, rating: dpApi.avgRating},
         keywords: dpApi.tags, 
         scopes: getApiScopeNames(dpApi),   
-        businessPlans: getBusinessPlans(dpApi)  
-        Idl: {idlLocation: "", idlType: dpApi.'type}, //TODO: find (possible values websocket, HTTP, graphQL, SOAPTOREST) - user has to get
-        endpoints: [],  //get environmentDisplayName and URLs.https (else) or URLs.wss (for websockets) depending on the type 
+        throttlingPolicies: getBusinessPlans(dpApi), 
+        endpoints: extractApiEndpoints(dpApi),
         apiVersions: versionsOfApi
     };
 }
 
-function getApiEndpoints(dp:API dpApi) returns APIEndpoint[]|error {
-
+//only returns HTTPS and WSS URLs
+function extractApiEndpoints(dp:API dpApi) returns APIEndpoint[] {
+    APIEndpoint[] apiEndpoints;
+    dp:API_endpointURLs[]? endpointURLs = dpApi.endpointURLs;
+    if endpointURLs is dp:API_endpointURLs[] {
+        foreach dp:API_endpointURLs endpoint in endpointURLs {
+            string environmentName = endpoint.environmentDisplayName ?: "";
+            string endpointURL;
+            string apiType = dpApi.'type ?: "";
+            dp:API_URLs? uRLs = endpoint.URLs;
+            if uRLs is dp:API_URLs {
+                if (apiType == WS) {
+                    endpointURL = uRLs.wss ?: "";
+                } else {
+                    endpointURL = uRLs.https ?: "";
+                }
+            }
+            APIEndpoint apiEP = {
+                environmentName: environmentName,
+                url: endpointURL
+            };
+            apiEndpoints.push(apiEP);
+        }
+    } 
+    return apiEndpoints;
 }
 
 function getApiScopeNames(dp:API dpApi) returns string[] {
@@ -226,16 +249,6 @@ function isPublicApi(dp:API dpApi) returns boolean {
         if accessibilityProperty[0].value == API_ACCESSIBILTY_PROPERTY_VALUE_EXTENAL {
             isPublic = true;
         }
-
-    }
-}
-
-function getIconUrl(dp:API api) returns string|error {
-    if api.hasThumbnail {
-        dp:Client devPotalClient = createDevPotalClient();
-        devPotalClient->
-    } else {
-        return "";
     }
 }
 
@@ -308,6 +321,25 @@ function getAllKeywords() returns KeywordInfo[]|error {     //how to limit to a 
     }
 }
 
+function getDPOpenApi(string apiId) returns string|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    string swaggerContent = check devPotalClient->/apis/[apiId]/swagger();
+    return swaggerContent;
+}
+
+function getDPSdl(string apiId) returns string|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    string graphqlSdlContent = check devPotalClient->/apis/[apiId]/graphql\-schema();
+    return graphqlSdlContent;
+}
+
+function getDPWsdl(string apiId) returns string|error {
+    dp:Client devPotalClient = createDevPotalClient();
+    http:Response responseWithWsdl = check devPotalClient->/apis/[apiId]/wsdl();
+    string wsdlContent = check responseWithWsdl.getTextPayload();
+    return wsdlContent;
+}
+
 function getAppApplications() returns ApiApp[]|error {    //how to limit to org
     dp:Client devPotalClient = createDevPotalClient();
     dp:ApplicationList applicationInfo = check devPotalClient->/applications();
@@ -319,27 +351,44 @@ function getAppApplications() returns ApiApp[]|error {    //how to limit to org
                                 name: dpApp.name ?: "",
                                 description: dpApp.description,
                                 environmentId: "",          //TODO:check
-                                subscribedEndpoints: []   //TODO: find
-                            } ;                             //TODO: check scopes and owner is important - attributes.scopes (comma sep), 
+                                subscribedApis: check getSubscriptionInfo(dpApp.applicationId ?: ""), 
+                                scopes: extractScopes(dpApp)
+                            };                            
         return apiApps;
     }
 }
 
+function extractScopes(dp:ApplicationInfo appInfo) returns string[]? {
+    record {|anydata...;|}? attributes = appInfo.attributes;
+    if attributes is map<any> {
+       string[] scopes = <string[]>attributes.get("scopes"); 
+       return scopes;
+    } 
+
+}
+
 function getSubscriptionInfo(string applicationId) returns string[]|error {
     dp:Client devPotalClient = createDevPotalClient();
+    string[] subscribedApis;
     dp:SubscriptionList subscriptionResponse = check devPotalClient->/subscriptions(applicationId);
     dp:Subscription[]? subscriptions = subscriptionResponse.list;
     if subscriptions is dp:Subscription[] {
-        subscriptions[0].apiInfo.name
+        foreach dp:Subscription subscription in subscriptions {
+            dp:APIInfo? apiInfo = subscription.apiInfo;
+            if apiInfo is dp:APIInfo {
+                string apiName = apiInfo.name;
+                subscribedApis.push(apiName);
+            } 
+        }
     }
-
+    return subscribedApis;
 }
 
 function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowResponse|error {
     dp:Client devPotalClient = createDevPotalClient();
     dp:Application devPortalApp = {
         name: appInfo.name,
-        throttlingPolicy: "",   //TODO: mandatory //resource isolated function get 'throttling\-policies/[string policyLevel] , policyLevel=application, get names (10PerMin)
+        throttlingPolicy: appInfo.throttlingPolicy,   
         description: appInfo.description
     };
     dp:WorkflowResponse|dp:Application appCreationResult = check devPotalClient->/applications.post(devPortalApp);
@@ -349,7 +398,7 @@ function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowRe
             id: check appCreationResult.applicationId.ensureType(string),
             description: appCreationResult.description,
             environmentId: "",
-            subscribedEndpoints: []
+            subscribedApis: []
         };
         return apiApp;
     } else if appCreationResult is dp:WorkflowResponse {
@@ -365,8 +414,8 @@ function createSubscription(SubscriptionRequest subscriptionRequest) returns Api
     dp:Client devPotalClient = createDevPotalClient();
     dp:Subscription dpSub = {
         applicationId: subscriptionRequest.apiAppId,
-        throttlingPolicy: "",   //Should be one of businessPlan names of the API being subscribed to
-        apiId: subscriptionRequest.apiId     //TODO: check why this is not mandatory 
+        throttlingPolicy: subscriptionRequest.throttlingPolicy,   //Should be one of businessPlan names of the API being subscribed to
+        apiId: subscriptionRequest.apiId     //TODO: check why this is not mandatory in generated code
     };
     dp:WorkflowResponse|dp:Subscription subsriptionResult = check devPotalClient->/subscriptions.post(dpSub);
     if subsriptionResult is dp:Subscription {
@@ -385,6 +434,24 @@ function createSubscription(SubscriptionRequest subscriptionRequest) returns Api
         return workflowRespose;
     }
 }
+
+function getApiThrottlingPolicyWithMaxLimits(Api api) returns string {
+    string[] businessPlans = api.throttlingPolicies;
+    BusinessPlansThrottling[] availablePlans = [Bronze, Silver, Gold, Unlimited];
+    string maxPlan;
+    if(businessPlans.filter(e => e == Unlimited).length() > 0) {
+        maxPlan = Unlimited;
+    } else if (businessPlans.filter(e => e == Gold).length() > 0) {
+        maxPlan = Gold;
+    } else if (businessPlans.filter(e => e == Silver).length() > 0) {
+        maxPlan = Silver;
+    } else if(businessPlans.filter(e => e == Bronze).length() > 0) {
+        maxPlan = Bronze;
+    }
+    return maxPlan;
+}
+
+
 
 function rateApiVersion(RatingRequest ratingRequest) returns Rating|error {
     dp:Client devPotalClient = createDevPotalClient();

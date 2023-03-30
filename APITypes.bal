@@ -33,9 +33,8 @@ public type ApiVersion record {|
     string description?;
     UsageDetail usageStats;
     string[] keywords?;
-    IDL Idl;
     string[]? scopes;
-    string[] businessPlans;
+    string[] throttlingPolicies;
     APIEndpoint[] endpoints?;
 |};
 
@@ -59,7 +58,7 @@ public enum IDLType {
 # + idlLocation - Link to the IDL definition   
 # + idlType - Type of the IDL (i.e OpenAPI, SDL, WSDL etc)
 public type IDL record {|
-    string idlLocation;
+    string content;
     IDLType idlType;
 |};
 
@@ -68,7 +67,7 @@ public type IDL record {|
 # + endpointType - Type of endpoint related to the environmet etc.  
 # + url - URL of the endpoint
 public type APIEndpoint record {|
-    EndpointType endpointType;
+    string environmentName;
     string url;
 |};
 
@@ -83,11 +82,12 @@ public enum EndpointType {
 # Defines a APIM application returned from APIM server 
 #
 # + id - Identifier of the app  
-# + subscribedEndpoints - List of endpoints APIM app is already subscribed to
+# + subscribedApis - List of APIs APIM app is already subscribed to
 public type ApiApp record {|
     string id;
     *CreatableApiApp;
-    APIEndpoint[] subscribedEndpoints;
+    string[] scopes?;
+    string[] subscribedApis;
 |};
 
 public type ApiSubscription record {|
@@ -106,6 +106,7 @@ public type CreatableApiApp record {|
     string name;
     string description?;
     string environmentId; //can change as per future APIM updates
+    string throttlingPolicy = API_CREATE_APP_DEFAULT_THROTTLING_POLICY;
 |};
 
 public type ApiWorkflowResponse record {
@@ -117,11 +118,32 @@ public type ApiWorkflowResponse record {
 
 # Structure of request to subscribe an APIM app to an API
 #
-# + apiAppId - Id of the APIM application 
-# + apiId - Id of the Choreo API 
+# + apiAppId - Id of the APIM application  
+# + apiId - Id of the Choreo API  
+# + throttlingPolicy - Business plan throttling policy (Bronze, Silver, Gold, Unlimited)
 public type SubscriptionRequest record {|
     string apiAppId;
     string apiId;
+    string throttlingPolicy;
 |};
+
+public enum ApiTypes {
+    HTTP,
+    WS ,
+    SOAPTOREST,
+    SOAP,
+    GRAPHQL,
+    WEBSUB,
+    SSE,
+    WEBHOOK,
+    ASYNC    
+};
+
+public enum BusinessPlansThrottling {
+    Bronze,
+    Silver,
+    Gold,
+    Unlimited
+}
 
 

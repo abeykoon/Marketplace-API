@@ -110,7 +110,7 @@ service /registry on new http:Listener(9000) {
         ApiWorkflowResponse|ApiSubscription subscriptionResponse = check createSubscription(subcriptionRequest);
     }
 
-    resource function get apis/[string apiId]/thumbnail() returns http:Response|error {
+    resource function get apis/[string apiId]/thumbnail() returns http:Response|error {  //TODO:when loading search results this might be inefficient
         return getApiThubnail(apiId);
     }
 
@@ -118,15 +118,39 @@ service /registry on new http:Listener(9000) {
         return getAllApiDocuments(apiId);
     }
 
-    resource function get apis/[string apiId]/documents/[string documentId]/content() returns http:Response|error {
+    resource function get apis/[string apiId]/documents/[string documentId]/content() returns http:Response|error {  //Dev portal specific 
         return getApiDocumentContent(apiId, documentId);
     }
-    //add another resource  resource isolated function get apis/[string apiId]/documents
 
-            //to get IDL 
-        //resource    isolated function get apis/[string apiId]/swagger
-        //resource isolated function get apis/[string apiId]/'graphql\-schema
-        //resource isolated function get apis/[string apiId]/wsdl(   
+    resource function get apis/[string apiId]/idl(ApiTypes apiType) returns IDL|error {   //Depending on api type the way to receive IDL differs
+        match apiType {   //is associated with dpApi.'type
+            HTTP => {
+                IDL idl = {
+                    idlType: OpenAPI,
+                    content: check getDPOpenApi(apiId)
+                };
+                return idl;
+            }
+            GRAPHQL => {
+                IDL idl = {
+                    idlType: GraphQL,
+                    content: check getDPSdl(apiId)
+                };
+                return idl;
+            }
+            ASYNC => {
+                //TODO;
+            }
+            SOAP => {
+                IDL idl = {
+                    idlType: WSDL,
+                    content: check getDPWsdl(apiId)
+                };
+                return idl;
+            }
+        }
+    }
+  
     
     
     //ADD ?/&organizationId=<uuid> to all API Calls       - 
