@@ -1,37 +1,68 @@
 import choreo_marketplace.devportal as dp;
 import choreo_marketplace.projectapi as prj;
+import choreo_marketplace.usersvc as usersvc;
 import ballerina/http;
-import ballerina/graphql;
 import ballerina/regex;
+import ballerina/io;
 
+configurable string token = ?;
+configurable string devPortalUrl = ?;
+configurable string projectApiUrl = ?;
+configurable string appServiceUrl = ?;
+//configurable string orgId = ?;
 
-function createDevPotalClient() returns dp:Client {
-    dp:ConnectionConfig connectionConfig = {
-        auth: {
-            tokenUrl: "",
-            username: "",
-            password: ""
-        }
-    };
-    dp:Client devPortalClient = check new (connectionConfig, serviceUrl = "");
-}
-function getOrgName(string orgId) returns string {
-    //get it from app service
-}
-
-function searchApis(string? query, string? orgHandler, string? orgId, string? projectId, string[]? keywords,
-    int 'limit = 20, int offset = 0, string sort = "org,ASC") returns Api[]|error {
-    
-    if (orgId != () && projectId != ()) {
-        dp:APIInfo[] devPortalApis = getDevPortalApiInfo(0, 20, query);  //TODO: check pagination
-        table<ApiOwner> key(apiId) apiOwnersOfOrg = getApiOwnersOfOrg(orgId, orgHandler);  //TODO: check orgHander story
-        Api[] apis = check populateApis(devPortalApis, apiOwnersOfOrg, sort);  //TODO: from within project and from other projects
+final dp:ConnectionConfig dpConConfig = {
+    auth: {
+        token: token
     }
+};
+final dp:Client devPortalClient = check new (dpConConfig, serviceUrl = devPortalUrl);
+
+final prj:ConnectionConfig projectApiConConfig = {
+    auth: {
+        token: token
+    }
+};
+final prj:GraphqlClient projectAPIClient = check new (projectApiConConfig, serviceUrl = projectApiUrl);
+
+final usersvc:UserServiceClient userSvcClient = check new(appServiceUrl);
+
+isolated function getDevPotalClient() returns dp:Client {
+    return devPortalClient;
 }
 
-function getApibyId(string orgId, string orgHandler, string apiVersionId) returns Api|error {
-    dp:API devPortalApi = check getDevPortalApi(apiVersionId);
-    ApiOwner apiOwner = check getApiOwner(orgId, orgHandler, apiVersionId);
+isolated function getProjectApiClient() returns prj:GraphqlClient {
+    return projectAPIClient;
+}
+
+isolated function getOrgId(string idpId, string orgName) returns int|error {
+    map<string[]> headers = {};
+    headers[REQUEST_USER_ID] = [idpId];
+    usersvc:ContextGetOrganizationRequest orgRequest = {
+        content: {organization_name: orgName},
+        headers: headers
+    };
+    usersvc:GetOrganizationResponse orgResponse = check userSvcClient->GetOrganization(orgRequest);
+    int orgId = orgResponse.organization.id;
+    return orgId;
+}
+
+isolated function getOrgName(string orgId) returns string {   //TODO: implement
+   return orgId;
+}
+
+isolated function searchDevPortalApis(string orgId, string orgHandler, string idpId, int 'limit = 20, int offset = 0,
+             string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns Api[]|error {
+
+    dp:APIInfo[] devPortalApis = check getDevPortalApiInfo(orgId, 0, 20, query); //TODO: check pagination, see how we can include keywords
+    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId); 
+    Api[] apis = check populateApis(orgId, devPortalApis, apiOwnersOfOrg, sort); 
+    return apis;
+}
+
+isolated function getApibyId(string orgId, string orgHandler, string idpId, string apiVersionId) returns Api|error {
+    dp:API devPortalApi = check getDevPortalApi(orgId, apiVersionId);
+    ApiOwner apiOwner = check getApiOwner(orgId, orgHandler, idpId, apiVersionId);
     //find versions of same API (This is COSTLY, can we go without it?)
     //string apiName = devPortalApi.name;
     //dp:APIInfo[] apiVersions = getDevPortalApis('limit = 50, offset = 0, query = apiName);
@@ -39,22 +70,12 @@ function getApibyId(string orgId, string orgHandler, string apiVersionId) return
     return populateApi(devPortalApi, apiOwner);
 }
 
-function getDevPortalApi(string apiVersionId) returns dp:API| error {
-    dp:Client devPortalClient = createDevPotalClient();
-    dp:API devPortalApi = check devPortalClient->/apis/[apiVersionId]();
-    return devPortalApi;
-}
-
-function getDevPortalApiInfo(int offset, int 'limit, string? query) returns dp:APIInfo[] {  //include keywords 
-    dp:Client devPortalClient = createDevPotalClient();
-    dp:APIList orgApis = check devPortalClient->/apis.get('limit, offset, query = query); //TODO: add tags, pagination info comes here 
-    return orgApis.list ?: [];
-};
-
-function getApiOwnersOfOrg(string orgId, string orgHandler) returns table<ApiOwner> key(apiId) {
-    prj:GraphqlClient projectAPIClient = check new(serviceUrl = "");
-    table<ApiOwner> key(apiId) apiOwnerInfo;
-    int orgIdAsNumber = check int:fromString(orgId);
+isolated function getApiOwnersOfOrg(string orgId, string orgHandler, string idpId) returns table<ApiOwner> key(apiId)|error {
+    prj:GraphqlClient projectAPIClient = getProjectApiClient();
+    table<ApiOwner> key(apiId) apiOwnerInfo = table [];
+    io:println("Getting org id");
+    int orgIdAsNumber = check getOrgId(idpId, orgHandler);
+    io:println("got org id = " + orgIdAsNumber.toString());
     prj:ProjectApisResponse projectApis = check projectAPIClient->projectApis(orgHandler, orgIdAsNumber);
     
     record {|string id; int orgId; string name; string? handler; string? extendedHandler; record {|string? id; record {|string? proxyId;|}[]? apiVersions;|}[] components;|}[] projects = projectApis.projects;
@@ -89,42 +110,42 @@ function getApiOwnersOfOrg(string orgId, string orgHandler) returns table<ApiOwn
 
 };
 
-function getApiOwner(string orgId, string orgHandler, string apiVersionId) returns ApiOwner|error {
-    table<ApiOwner> key(apiId) apiOwnersOfOrg = getApiOwnersOfOrg(orgId, orgHandler);
+isolated function getApiOwner(string orgId, string orgHandler, string idpId, string apiVersionId) returns ApiOwner|error {
+    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId);
     return apiOwnersOfOrg.get(apiVersionId);
 }
 
-function populateApis(dp:APIInfo [] depPortalApis, table<ApiOwner> key(apiId) apiOwnerInfo, string sortingParam) returns Api[]|error {
+isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<ApiOwner> key(apiId) apiOwnerInfo, string sortingParam) returns Api[]|error {
     
     Api[] apisToReturn = [];
 
     //get unique APIs 
     string[] apiNames = from dp:APIInfo api in depPortalApis select api.name;
-    string[] uniqueApiNames = removeDuplicates(apiNames);
+    string[] uniqueApiNames = removeDuplicates(<string[] & readonly>apiNames);
 
     foreach string apiName in uniqueApiNames {
         ApiVersionInfo[] versionsOfApi = getAllVersionMetaInfo(depPortalApis, apiName);
         ApiVersionInfo latestVersionOfApi = versionsOfApi[0];
-        dp:API devPortalApi = check getDevPortalApi(latestVersionOfApi.apiId);
+        dp:API devPortalApi = check getDevPortalApi(orgId, latestVersionOfApi.apiId);
         ApiOwner apiOwner = apiOwnerInfo.get(latestVersionOfApi.apiId);
         Api api = populateApi(devPortalApi, apiOwner, versionsOfApi);
         apisToReturn.push(api);
     }
 
-    Api[] sortedApis =  sortApis(apisToReturn, sortingParam);
+    Api[] sortedApis =  check sortApis(apisToReturn, sortingParam);
 
     return sortedApis;
 };
 
-function sortApis(Api[] apis, string sortingParam) returns Api[] {
+isolated function sortApis(Api []apis, string sortingParam) returns Api[]|error {
+
     string[] sortingArribs = regex:split(sortingParam, ",");
     string sortKey = sortingArribs[0];
     string sortDirection = sortingArribs[1];
     boolean isAcescending = true;
     if sortDirection == "DSC" {
         isAcescending = false;
-    }
-    
+    } 
     match sortKey {
         "name" => {
             if isAcescending {
@@ -159,11 +180,30 @@ function sortApis(Api[] apis, string sortingParam) returns Api[] {
                     select e;
             }
         }
+        "project" => {
+            if isAcescending {
+                if isAcescending {
+                    return from var e in apis
+                        order by e.owner.projectName, e.name ascending 
+                        select e;
+                } else {
+                    return from var e in apis
+                        order by e.owner.projectName, e.name descending
+                        select e;
+                }
+            }
+        }
+        _ => {
+            return from var e in apis
+                order by e.name ascending
+                select e;
+        }
     }
-    
+
+    return error("Unexpected issue while sorting Apis"); 
 }
 
-function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versionsOfApi) returns Api {
+isolated function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versionsOfApi = ()) returns Api {
 
     boolean isPreRelease = false; 
     if dpApi.lifeCycleStatus == API_LIFECYCLE_PROTOTYPED {
@@ -190,16 +230,18 @@ function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versions
         endpoints: extractApiEndpoints(dpApi),
         apiVersions: versionsOfApi
     };
+
+    return api;
 }
 
 //only returns HTTPS and WSS URLs
-function extractApiEndpoints(dp:API dpApi) returns APIEndpoint[] {
-    APIEndpoint[] apiEndpoints;
+isolated function extractApiEndpoints(dp:API dpApi) returns APIEndpoint[] {
+    APIEndpoint[] apiEndpoints= [];
     dp:API_endpointURLs[]? endpointURLs = dpApi.endpointURLs;
     if endpointURLs is dp:API_endpointURLs[] {
         foreach dp:API_endpointURLs endpoint in endpointURLs {
             string environmentName = endpoint.environmentDisplayName ?: "";
-            string endpointURL;
+            string endpointURL = "";
             string apiType = dpApi.'type ?: "";
             dp:API_URLs? uRLs = endpoint.URLs;
             if uRLs is dp:API_URLs {
@@ -219,7 +261,7 @@ function extractApiEndpoints(dp:API dpApi) returns APIEndpoint[] {
     return apiEndpoints;
 }
 
-function getApiScopeNames(dp:API dpApi) returns string[] {
+isolated function getApiScopeNames(dp:API dpApi) returns string[] {
     dp:ScopeInfo[]? scopes = dpApi.scopes;
     if scopes is dp:ScopeInfo[] {
         string [] scopeNames = from dp:ScopeInfo scope in scopes
@@ -230,16 +272,18 @@ function getApiScopeNames(dp:API dpApi) returns string[] {
     }
 }
 
-function getBusinessPlans(dp:API dpApi) returns string[] {
+isolated function getBusinessPlans(dp:API dpApi) returns string[] {
     dp:API_tiers[]? apiTiers = dpApi.tiers;
     if apiTiers is dp:API_tiers[] {
         string[] apiTierNames = from dp:API_tiers tier in apiTiers
                                 select tier.tierName ?: "";
         return apiTierNames;
+    } else {
+        return [];
     }
 }
 
-function isPublicApi(dp:API dpApi) returns boolean {
+isolated function isPublicApi(dp:API dpApi) returns boolean {
     boolean isPublic = false;
     dp:APIInfo_additionalProperties[]? additionalProps = dpApi.additionalProperties;
     if additionalProps is dp:APIInfo_additionalProperties[] {
@@ -250,9 +294,10 @@ function isPublicApi(dp:API dpApi) returns boolean {
             isPublic = true;
         }
     }
+    return isPublic;
 }
 
-function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName) returns ApiVersionInfo[] {
+isolated function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName) returns ApiVersionInfo[] {
     dp:APIInfo[] versionsOfAPI = from dp:APIInfo api in devPortalApis
         where api.name == uniqueApiName
         order by api.'version descending //TODO: define latest
@@ -266,48 +311,34 @@ function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName)
     return apiVersionMetaInfo;
 }
 
-function getAllApiDocuments(string apiId) returns Document[]|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    dp:DocumentList documentInfo = check devPotalClient->/apis/[apiId]/documents('limit=200);
-    dp:Document[]? documents = documentInfo.list;
-    if documents is dp:Document[] {
-        Document[] apiDocs = from dp:Document document in documents
-                            select {
-                                documentId: document.documentId ?: "",
-                                name: document.name, 
-                                docType: ApiDoc,
-                                summary: document.summary,
-                                sourceType: document.sourceType,
-                                sourceUrl: document.sourceUrl ?: ""
-                            };
-        return apiDocs;
-    } else {
-        return [];
-    }
-}
-
-function getApiDocumentContent(string apiId , string documentId) returns http:Response|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    return devPotalClient->/apis/[apiId]/documents/[documentId]/content();
-}
-
-function getApisofProject(string projectId, Api[] allApisOfOrg) returns Api[] {
+isolated function getApisofProject(string projectId, Api[] allApisOfOrg) returns Api[] {
     return from Api api in allApisOfOrg
         where api.owner.projectId == projectId
         order by api.name
         select api;
 }
 
-function getApisOfOtherProjects(string projectId, Api[] allApisOfOrg) returns Api[] {
+isolated function getApisOfOtherProjects(string projectId, Api []allApisOfOrg) returns Api[] {
     return from Api api in allApisOfOrg
         where api.owner.projectId != projectId
         order by api.name
         select api;
 }
 
-function getAllKeywords() returns KeywordInfo[]|error {     //how to limit to a org
-    dp:Client devPotalClient = createDevPotalClient();
-    dp:TagList apiTagInfo = check devPotalClient ->/tags('limit = 100);
+isolated function extractScopes(dp:ApplicationInfo appInfo) returns string[]? {
+    record {|anydata...;|}? attributes = appInfo.attributes;
+    if attributes is map<any> {
+        string[] scopes = <string[]>attributes.get("scopes");
+        return scopes;
+    } else {
+        return [];
+    }
+}
+
+
+isolated function getAllKeywords(string orgId) returns KeywordInfo[]|error {     //how to limit to a org
+    dp:Client devPotalClient = getDevPotalClient();
+    dp:TagList apiTagInfo = check devPotalClient ->/tags(orgId,'limit = 100);
     dp:Tag[]? apiTags = apiTagInfo.list;
     if apiTags is dp:Tag[] {
         KeywordInfo [] keywords = from dp:Tag apiTag in apiTags
@@ -321,28 +352,28 @@ function getAllKeywords() returns KeywordInfo[]|error {     //how to limit to a 
     }
 }
 
-function getDPOpenApi(string apiId) returns string|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    string swaggerContent = check devPotalClient->/apis/[apiId]/swagger();
+isolated function getDPOpenApi(string orgId, string apiId) returns string|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    string swaggerContent = check devPotalClient->/apis/[apiId]/swagger(orgId);
     return swaggerContent;
 }
 
-function getDPSdl(string apiId) returns string|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    string graphqlSdlContent = check devPotalClient->/apis/[apiId]/graphql\-schema();
+isolated function getDPSdl(string orgId, string apiId) returns string|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    string graphqlSdlContent = check devPotalClient->/apis/[apiId]/graphql\-schema(orgId);
     return graphqlSdlContent;
 }
 
-function getDPWsdl(string apiId) returns string|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    http:Response responseWithWsdl = check devPotalClient->/apis/[apiId]/wsdl();
+isolated function getDPWsdl(string orgId, string apiId) returns string|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    http:Response responseWithWsdl = check devPotalClient->/apis/[apiId]/wsdl(orgId);
     string wsdlContent = check responseWithWsdl.getTextPayload();
     return wsdlContent;
 }
 
-function getAppApplications() returns ApiApp[]|error {    //how to limit to org
-    dp:Client devPotalClient = createDevPotalClient();
-    dp:ApplicationList applicationInfo = check devPotalClient->/applications();
+isolated function getAppApplications(string orgId) returns ApiApp[]|error {    //how to limit to org
+    dp:Client devPotalClient = getDevPotalClient();
+    dp:ApplicationList applicationInfo = check devPotalClient->/applications(orgId);
     dp:ApplicationInfo[]? dpApps = applicationInfo.list;
     if dpApps is dp:ApplicationInfo[] {
         ApiApp[] apiApps = from dp:ApplicationInfo dpApp in dpApps
@@ -355,21 +386,14 @@ function getAppApplications() returns ApiApp[]|error {    //how to limit to org
                                 scopes: extractScopes(dpApp)
                             };                            
         return apiApps;
+    } else {
+        return [];
     }
 }
 
-function extractScopes(dp:ApplicationInfo appInfo) returns string[]? {
-    record {|anydata...;|}? attributes = appInfo.attributes;
-    if attributes is map<any> {
-       string[] scopes = <string[]>attributes.get("scopes"); 
-       return scopes;
-    } 
-
-}
-
-function getSubscriptionInfo(string applicationId) returns string[]|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    string[] subscribedApis;
+isolated function getSubscriptionInfo(string applicationId) returns string[]|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    string[] subscribedApis = [];
     dp:SubscriptionList subscriptionResponse = check devPotalClient->/subscriptions(applicationId);
     dp:Subscription[]? subscriptions = subscriptionResponse.list;
     if subscriptions is dp:Subscription[] {
@@ -384,8 +408,8 @@ function getSubscriptionInfo(string applicationId) returns string[]|error {
     return subscribedApis;
 }
 
-function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowResponse|error {
-    dp:Client devPotalClient = createDevPotalClient();
+isolated function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowResponse|error {
+    dp:Client devPotalClient = getDevPotalClient();
     dp:Application devPortalApp = {
         name: appInfo.name,
         throttlingPolicy: appInfo.throttlingPolicy,   
@@ -407,17 +431,19 @@ function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowRe
             jsonPayload: appCreationResult.jsonPayload
         };
         return workflowRespose;
+    } else {
+        return error("Error when creating application name = " + appInfo.name);
     }
 }
 
-function createSubscription(SubscriptionRequest subscriptionRequest) returns ApiWorkflowResponse|ApiSubscription|error {
-    dp:Client devPotalClient = createDevPotalClient();
+isolated function createSubscription(string orgId, SubscriptionRequest subscriptionRequest) returns ApiWorkflowResponse|ApiSubscription|error {
+    dp:Client devPotalClient = getDevPotalClient();
     dp:Subscription dpSub = {
         applicationId: subscriptionRequest.apiAppId,
         throttlingPolicy: subscriptionRequest.throttlingPolicy,   //Should be one of businessPlan names of the API being subscribed to
         apiId: subscriptionRequest.apiId     //TODO: check why this is not mandatory in generated code
     };
-    dp:WorkflowResponse|dp:Subscription subsriptionResult = check devPotalClient->/subscriptions.post(dpSub);
+    dp:WorkflowResponse|dp:Subscription subsriptionResult = check devPotalClient->/subscriptions.post(orgId, dpSub);
     if subsriptionResult is dp:Subscription {
         ApiSubscription subscription = {
             subscriptionId: subsriptionResult.subscriptionId ?: "",
@@ -432,35 +458,59 @@ function createSubscription(SubscriptionRequest subscriptionRequest) returns Api
             jsonPayload: subsriptionResult.jsonPayload
         };
         return workflowRespose;
+    } else {
+        return error("Error when subscribing to API id = " + subscriptionRequest.apiId 
+            + " to application id= " + subscriptionRequest.apiAppId);
     }
 }
 
-function getApiThrottlingPolicyWithMaxLimits(Api api) returns string {
+isolated function getApiThrottlingPolicyWithMaxLimits(Api api) returns string|error {    //should be done in client side
     string[] businessPlans = api.throttlingPolicies;
-    BusinessPlansThrottling[] availablePlans = [Bronze, Silver, Gold, Unlimited];
-    string maxPlan;
     if(businessPlans.filter(e => e == Unlimited).length() > 0) {
-        maxPlan = Unlimited;
+        return Unlimited;
     } else if (businessPlans.filter(e => e == Gold).length() > 0) {
-        maxPlan = Gold;
+        return Gold;
     } else if (businessPlans.filter(e => e == Silver).length() > 0) {
-        maxPlan = Silver;
+        return Silver;
     } else if(businessPlans.filter(e => e == Bronze).length() > 0) {
-        maxPlan = Bronze;
+        return Bronze;
     }
-    return maxPlan;
+    return error("No throttling limit found for API id = " + api.apiId);
 }
 
+isolated function getAllApiDocuments(string orgId, string apiId) returns Document[]|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    dp:DocumentList documentInfo = check devPotalClient->/apis/[apiId]/documents(orgId, 'limit = 200);
+    dp:Document[]? documents = documentInfo.list;
+    if documents is dp:Document[] {
+        Document[] apiDocs = from dp:Document document in documents
+            select {
+                documentId: document.documentId ?: "",
+                name: document.name,
+                docType: ApiDoc,
+                summary: document.summary,
+                sourceType: document.sourceType,
+                sourceUrl: document.sourceUrl ?: ""
+            };
+        return apiDocs;
+    } else {
+        return [];
+    }
+}
 
+isolated function getApiDocumentContent(string orgId, string apiId, string documentId) returns http:Response|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    return devPotalClient->/apis/[apiId]/documents/[documentId]/content(orgId);
+}
 
-function rateApiVersion(RatingRequest ratingRequest) returns Rating|error {
-    dp:Client devPotalClient = createDevPotalClient();
+isolated function rateApiVersion(string orgId, RatingRequest ratingRequest) returns Rating|error {
+    dp:Client devPotalClient = getDevPotalClient();
     dp:Rating dpRating = {
         apiId: ratingRequest.apiId,
         rating: ratingRequest.rating,
         ratedBy: ratingRequest.ratedBy
     };
-    dp:Rating ratingResponse = check devPotalClient->/apis/[ratingRequest.apiId]/user\-rating.put(dpRating);
+    dp:Rating ratingResponse = check devPotalClient->/apis/[ratingRequest.apiId]/user\-rating.put(orgId, dpRating);
     Rating apiRating =  {
         ratingId: ratingResponse.ratingId,
         apiId: ratingResponse.apiId ?: "", 
@@ -470,28 +520,31 @@ function rateApiVersion(RatingRequest ratingRequest) returns Rating|error {
     return apiRating;
 }
 
-function getApiThubnail(string apiId) returns http:Response|error {
-    dp:Client devPotalClient = createDevPotalClient();
-    return devPotalClient->/apis/[apiId]/thumbnail();
+isolated function getApiThubnail(string orgId, string apiId) returns http:Response|error {
+    dp:Client devPotalClient = getDevPotalClient();
+    return devPotalClient->/apis/[apiId]/thumbnail(orgId);
 }
 
-function removeDuplicates(string[] strArr) returns string[] {
-    _ = strArr.some(function(string s) returns boolean {
-        int? firstIndex = strArr.indexOf(s);
-        int? lastIndex = strArr.lastIndexOf(s);
-        if (firstIndex != lastIndex) {
-            _ = strArr.remove(<int>lastIndex);
-        }
-
-        // Returning true, if the end of the array is reached.
-        if (firstIndex == (strArr.length() - 1)) {
-            return true;
-        }
-        return false;
-    });
-
-    return strArr;
+isolated function getDevPortalApi(string orgId, string apiVersionId) returns dp:API|error {
+    dp:Client devPortalClient = getDevPotalClient();
+    dp:API devPortalApi = check devPortalClient->/apis/[apiVersionId](orgId);
+    return devPortalApi;
 }
+
+isolated function getDevPortalApiInfo(string orgId, int offset, int 'limit, string? query) returns dp:APIInfo[]|error { //include keywords 
+    dp:Client devPortalClient = getDevPotalClient();
+    dp:APIList orgApis = check devPortalClient->/apis.get(orgId,'limit, offset); //TODO: add tags, pagination info comes here 
+    return orgApis.list ?: [];
+};
+
+isolated function searchApisWithinProject(string orgId , string orgHandler, string projectId, int 'limit , int offset , string? query, string[]? keywords) returns Api[]|error {
+    return[];
+}
+
+isolated function searchPublicApis(int 'limit, int offset,string ? query, string[]? keywords) returns Api[]|error {
+    return[];
+}
+
 
 
 

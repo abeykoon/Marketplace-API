@@ -19,6 +19,7 @@ import ballerina/graphql;
 # Client configuration details.
 @display {label: "Connection Config"}
 public type ConnectionConfig record {|
+    graphql:BearerTokenConfig auth;
     # Configurations related to HTTP/1.x protocol
     ClientHttp1Settings http1Settings?;
     # The maximum time to wait (in seconds) for a response before closing the connection

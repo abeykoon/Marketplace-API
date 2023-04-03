@@ -5,7 +5,7 @@ import ballerina/constraint;
 @display {label: "Connection Config"}
 public type ConnectionConfig record {|
     # Configurations related to client authentication
-    OAuth2PasswordGrantConfig auth;
+    OAuth2PasswordGrantConfig|http:BearerTokenConfig auth;
     # The HTTP version understood by the client
     http:HttpVersion httpVersion = http:HTTP_2_0;
     # Configurations related to HTTP/1.x protocol
@@ -216,7 +216,7 @@ public type ApplicationToken record {
 
 public type APIMonetizationUsage record {
     # Map of custom properties related to monetization usage
-    record {} properties?;
+    record {|string...;|} properties?;
 };
 
 public type Subscription record {
@@ -277,10 +277,10 @@ public type APIMonetizationInfo record {
 };
 
 public type APIBusinessInformation record {
-    string businessOwner?;
-    string businessOwnerEmail?;
-    string technicalOwner?;
-    string technicalOwnerEmail?;
+    string? businessOwner?;
+    string? businessOwnerEmail?;
+    string? technicalOwner?;
+    string? technicalOwnerEmail?;
 };
 
 public type SolaceTopics record {
@@ -337,15 +337,15 @@ public type CommenterInfo record {
 
 public type Applications_import_body record {
     # Zip archive consisting of exported Application Configuration.
-    string file;
+    record {byte[] fileContent; string fileName;} file;
 };
 
 public type AdvertiseInfo record {
     boolean advertised?;
-    string apiExternalProductionEndpoint?;
-    string apiExternalSandboxEndpoint?;
-    string originalDevPortalUrl?;
-    string apiOwner?;
+    string? apiExternalProductionEndpoint?;
+    string? apiExternalSandboxEndpoint?;
+    string? originalDevPortalUrl?;
+    string? apiOwner?;
     string vendor?;
 };
 
@@ -384,7 +384,7 @@ public type Application record {
     string[] groups?;
     int subscriptionCount?;
     ApplicationKey[] keys?;
-    record {} attributes?;
+    record {|string...;|} attributes?;
     ScopeInfo[] subscriptionScopes?;
     # Application created user
     string owner?;
@@ -651,14 +651,14 @@ public type APIInfo record {
     string id;
     string name;
     string description?;
-    string context;
+    string context?;
     string 'version;
     string 'type?;
-    string createdTime;
+    string createdTime?;
     # If the provider value is not given, the user invoking the API will be used as the provider.
     string provider?;
     string lifeCycleStatus?;
-    string thumbnailUri?;
+    string? thumbnailUri?;
     # Average rating of the API
     string avgRating?;
     # List of throttling policies of the API
@@ -714,7 +714,7 @@ public type ThrottlingPolicy record {
     string description?;
     string policyLevel?;
     # Custom attributes added to the throttling policy
-    record {} attributes?;
+    record {|string...;|} attributes?;
     # Maximum number of requests which can be sent within a provided unit time
     int requestCount;
     # Unit of data allowed to be transfered. Allowed values are "KB", "MB" and "GB"

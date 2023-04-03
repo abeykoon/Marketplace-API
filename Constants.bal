@@ -3,3 +3,5 @@ const API_ACCESSIBILTY_PROPERTY_KEY = "accessibility";
 const API_ACCESSIBILTY_PROPERTY_VALUE_EXTENAL = "external";
 const API_CREATE_APP_DEFAULT_THROTTLING_POLICY = "Unlimited";
 const API_APPLICATION_SCOPE_ATTRINUTE_NAME = "scopes";
+const ORG_KEY_IN_JWT = "organization";
+const REQUEST_USER_ID = "user-idp-id";

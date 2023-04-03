@@ -111,9 +111,10 @@ paths:
         * By default, this operation retrieves Published APIs. In order to retrieve Prototyped APIs, you need to use **query** parameter and specify **status:PROTOTYPED**.
         * This operation does not require an Authorization header by default. But if it is provided, it will be validated and checked for permissions of the user, hence you may be able to see APIs which are restricted for special permissions/roles.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
-      - $ref: '#/components/parameters/requestedTenant'
+      - $ref: '#/components/parameters/requestedTenant'     
       - name: query
         in: query
         description: |
@@ -177,6 +178,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But if it is provided, it will be validated and checked for permissions of the user, hence you may be able to see APIs which are restricted for special permissions/roles. \n
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/If-None-Match'
@@ -233,6 +235,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's swagger definition, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/environmentName'
       - $ref: '#/components/parameters/If-None-Match'
@@ -306,6 +309,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's swagger definition, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/If-None-Match'
       - $ref: '#/components/parameters/requestedTenant'
@@ -367,6 +371,7 @@ paths:
       description: |
         This operation can be used to generate SDKs (System Development Kits), for the APIs available in the API Developer Portal, for a requested development language.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - name: language
         in: path
@@ -413,6 +418,7 @@ paths:
         This operation can be used to retrieve the swagger definition of an API.
       operationId: getWSDLOfAPI
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/environmentName'
       - $ref: '#/components/parameters/If-None-Match'
@@ -467,6 +473,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's documents, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
@@ -517,6 +524,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's document, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/documentId'
       - $ref: '#/components/parameters/requestedTenant'
@@ -576,6 +584,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's document content, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/documentId'
       - $ref: '#/components/parameters/requestedTenant'
@@ -643,6 +652,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's thumbnail, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/If-None-Match'
@@ -701,6 +711,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to retrieve ratings of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
@@ -731,6 +742,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to retrieve the logged in user rating of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/If-None-Match'
@@ -785,6 +797,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to add or update the logged in user rating of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       requestBody:
@@ -832,6 +845,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to delete the logged in user rating of an API that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/If-Match'
@@ -857,6 +871,7 @@ paths:
         Get a list of Comments that are already added to APIs
       operationId: getAllCommentsOfAPI
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/limit'
@@ -886,6 +901,7 @@ paths:
       summary: Add an API Comment
       operationId: addCommentToAPI
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/parentCommentID'
       requestBody:
@@ -962,6 +978,7 @@ paths:
         Get the individual comment given by a user for a certain API.
       operationId: getCommentOfAPI
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/commentId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
@@ -1016,6 +1033,7 @@ paths:
         Remove a Comment
       operationId: deleteComment
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/commentId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/If-Match'
@@ -1057,6 +1075,7 @@ paths:
         Edit the individual comment
       operationId: editCommentOfAPI
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/commentId'
       - $ref: '#/components/parameters/apiId'
       requestBody:
@@ -1134,6 +1153,7 @@ paths:
         Get replies of a comment
       operationId: getRepliesOfComment
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/commentId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
@@ -1190,6 +1210,7 @@ paths:
       description: |
         This operation will provide a list of topics available for a given Async API, based on the provided API ID.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       responses:
@@ -1231,6 +1252,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to retrive API subscription throttling policies that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/If-None-Match'
@@ -1283,6 +1305,7 @@ paths:
       description: |
         This operation can be used to retrieve list of applications that is belonged to the user associated with the provided access token.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/groupId'
       - name: query
         in: query
@@ -1439,6 +1462,7 @@ paths:
       description: |
         This operation can be used to retrieve details of an individual application specifying the application id in the URI.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/If-None-Match'
       - $ref: '#/components/parameters/requestedTenant'
@@ -1492,6 +1516,7 @@ paths:
       description: |
         This operation can be used to update an application. Upon succesfull you will retrieve the updated application as the response.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/If-Match'
       requestBody:
@@ -1556,6 +1581,7 @@ paths:
       description: |
         This operation can be used to remove an application specifying its id.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/If-Match'
       responses:
@@ -1601,6 +1627,7 @@ paths:
       description: |
         Generate keys (Consumer key/secret) for application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/requestedTenant'
       requestBody:
@@ -1642,6 +1669,7 @@ paths:
       description: |
         Map keys (Consumer key/secret) to an application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/requestedTenant'
       requestBody:
@@ -1683,6 +1711,7 @@ paths:
       description: |
         Retrieve keys (Consumer key/secret) of application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       responses:
         "200":
@@ -1717,6 +1746,7 @@ paths:
       description: |
         This operation can be used to retrieve key details of an individual application specifying the key type in the URI.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       - $ref: '#/components/parameters/groupId'
@@ -1752,6 +1782,7 @@ paths:
       description: |
         This operation can be used to update grant types and callback url of an application. (Consumer Key and Consumer Secret are ignored) Upon succesfull you will retrieve the updated key details as the response.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       requestBody:
@@ -1795,6 +1826,7 @@ paths:
       description: |
         This operation can be used to re generate consumer secret for an application for the give key type
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       responses:
@@ -1853,6 +1885,7 @@ paths:
       description: |
         Clean up keys after failed key generation of an application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       - $ref: '#/components/parameters/If-Match'
@@ -1885,6 +1918,7 @@ paths:
       description: |
         Generate an access token for application by client_credentials grant type
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       - $ref: '#/components/parameters/If-Match'
@@ -1928,6 +1962,7 @@ paths:
       description: |
         Retrieve keys (Consumer key/secret) of application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/requestedTenant'
       responses:
@@ -1962,6 +1997,7 @@ paths:
       description: |
         This operation can be used to retrieve key details of an individual application specifying the key type in the URI.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyMappingId'
       - $ref: '#/components/parameters/groupId'
@@ -1996,6 +2032,7 @@ paths:
       description: |
         This operation can be used to update grant types and callback url of an application. (Consumer Key and Consumer Secret are ignored) Upon succesfull you will retrieve the updated key details as the response.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyMappingId'
       requestBody:
@@ -2038,6 +2075,7 @@ paths:
       description: |
         This operation can be used to re generate consumer secret for an application for the give key type
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyMappingId'
       responses:
@@ -2095,6 +2133,7 @@ paths:
       description: |
         Clean up keys after failed key generation of an application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyMappingId'
       - $ref: '#/components/parameters/If-Match'
@@ -2126,6 +2165,7 @@ paths:
       description: |
         Generate an access token for application by client_credentials grant type
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyMappingId'
       - $ref: '#/components/parameters/If-Match'
@@ -2168,6 +2208,7 @@ paths:
       description: |
         Generate a self contained API Key for the application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       - $ref: '#/components/parameters/If-Match'
@@ -2211,6 +2252,7 @@ paths:
       description: |
         Revoke a self contained API Key for the application
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId'
       - $ref: '#/components/parameters/keyType'
       - $ref: '#/components/parameters/If-Match'
@@ -2249,6 +2291,7 @@ paths:
       description: |
         This operation can be used to export the details of a particular application as a zip file.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - name: appName
         in: query
         description: |
@@ -2328,6 +2371,7 @@ paths:
       description: |
         This operation can be used to import an application.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - name: preserveOwner
         in: query
         description: |
@@ -2440,6 +2484,7 @@ paths:
         **IMPORTANT:**
         * It is mandatory to provide either **apiId** or **applicationId**.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId-Q'
       - $ref: '#/components/parameters/applicationId-Q'
       - $ref: '#/components/parameters/groupId'
@@ -2488,6 +2533,7 @@ paths:
       description: |
         This operation can be used to add a new subscription providing the id of the API and the application.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       requestBody:
         description: |
@@ -2563,6 +2609,7 @@ paths:
       description: |
         This operation can be used to add a new subscriptions providing the ids of the APIs and the applications.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       requestBody:
         description: |
@@ -2628,6 +2675,7 @@ paths:
         This operation can be used to retrieve all additional Information of subscriptions attached to an API by providing the API id.
       operationId: getAdditionalInfoOfAPISubscriptions
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       - $ref: '#/components/parameters/groupId'
       - $ref: '#/components/parameters/requestedTenant'
@@ -2672,6 +2720,7 @@ paths:
       description: |
         This operation can be used to get details of a single subscription.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/subscriptionId'
       - $ref: '#/components/parameters/If-None-Match'
       responses:
@@ -2721,6 +2770,7 @@ paths:
       description: |
         This operation can be used to update a subscription providing the subscription id, api id, application Id, status and updated throttling policy tier.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       - $ref: '#/components/parameters/subscriptionId'
       requestBody:
@@ -2805,6 +2855,7 @@ paths:
       description: |
         This operation can be used to remove a subscription.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/subscriptionId'
       - $ref: '#/components/parameters/If-Match'
       responses:
@@ -2850,6 +2901,7 @@ paths:
       description: |
         This operation can be used to get details of a pending invoice for a monetized subscription with metered billing.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/subscriptionId'
       responses:
         "200":
@@ -2905,6 +2957,7 @@ paths:
       description: |
         This operation can be used to get all available application or subscription level throttling policies
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
       - $ref: '#/components/parameters/policyLevel'
@@ -2951,6 +3004,7 @@ paths:
 
         `X-WSO2-Tenant` header can be used to retrive throttling policy that belongs to a different tenant domain. If not specified super tenant will be used. If Authorization header is present in the request, the user's tenant associated with the access token will be used.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/policyId'
       - $ref: '#/components/parameters/policyLevel'
       - $ref: '#/components/parameters/requestedTenant'
@@ -3009,6 +3063,7 @@ paths:
         **NOTE:**
         * This operation does not require an Authorization header by default. But in order to see a restricted API's tags, you need to provide Authorization header.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
       - $ref: '#/components/parameters/requestedTenant'
@@ -3054,6 +3109,7 @@ paths:
       description: |
         This operation provides you a list of available APIs and API Documents qualifying the given keyword match.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/limit'
       - $ref: '#/components/parameters/offset'
       - $ref: '#/components/parameters/requestedTenant'
@@ -3145,6 +3201,7 @@ paths:
         This operation will provide a list of web hook topic subscriptions for a given application. If the api id is provided
         results will be filtered by the api Id.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/applicationId-Q'
       - $ref: '#/components/parameters/apiId-Q'
       - $ref: '#/components/parameters/requestedTenant'
@@ -3184,6 +3241,7 @@ paths:
       description: |
         Retreive Developer Portal settings
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       responses:
         "200":
@@ -3212,6 +3270,7 @@ paths:
       description: |
         This operation can be used to retrieve the application attributes from configuration. It will not return hidden attributes.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/If-None-Match'
       responses:
         "200":
@@ -3250,6 +3309,7 @@ paths:
       description: |
         This operation is used to get tenants by state
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - name: state
         in: query
         description: |
@@ -3334,6 +3394,7 @@ paths:
       description: |
         Get all API categories
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       responses:
         "200":
@@ -3357,6 +3418,7 @@ paths:
       description: |
         Get all Key managers
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/requestedTenant'
       responses:
         "200":
@@ -3382,6 +3444,7 @@ paths:
       description: |
         This operation can be used to retrieve complexity related details belonging to an API by providing the API id.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       responses:
         "200":
@@ -3419,6 +3482,7 @@ paths:
       description: |
         This operation can be used to retrieve all types and fields of the GraphQL Schema by providing the API id.
       parameters:
+      - $ref: '#/components/parameters/organizationId'
       - $ref: '#/components/parameters/apiId'
       responses:
         "200":
@@ -5710,6 +5774,16 @@ components:
             moreInfo: ""
             error: []
   parameters:
+    organizationId:
+      name: organizationId
+      in: query
+      description: |
+        **ORGANIZATION ID** consisting the **UUID** of the organization.
+      required: true
+      style: simple
+      explode: false
+      schema:
+        type: string
     parentCommentID:
       name: replyTo
       in: query
@@ -6017,6 +6091,9 @@ components:
       schema:
         type: string
   securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
     OAuth2Security:
       type: oauth2
       flows:

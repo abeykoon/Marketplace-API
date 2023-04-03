@@ -92,5 +92,17 @@ public type Document record {
     string sourceUrl;
 };
 
+public type Organization record {
+    string id;
+    string uuid;
+    string 'handle;
+    string name;
+};
+
+public type OrganizationInfo record {
+    string 'handle;
+    string uuid;
+};
+
 
 
