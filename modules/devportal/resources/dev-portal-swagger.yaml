@@ -1390,6 +1390,8 @@ paths:
         Create a New Application
       description: |
         This operation can be used to create a new application specifying the details of the application in the payload.
+      parameters:
+        - $ref: '#/components/parameters/organizationId'
       requestBody:
         description: |
           Application object that is to be created.

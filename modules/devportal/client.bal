@@ -158,13 +158,13 @@ public isolated client class Client {
     # + ifNoneMatch - Validator for conditional requests; based on the ETag of the formerly retrieved variant of the resourec. 
     # + xWso2Tenant - For cross-tenant invocations, this is used to specify the tenant domain, where the resource need to be   retrieved from. 
     # + return - OK. Requested swagger document of the API is returned 
-    resource isolated function get apis/[string apiId]/swagger(string organizationId, string? environmentName = (), string? ifNoneMatch = (), string? xWso2Tenant = ()) returns string|error {
+    resource isolated function get apis/[string apiId]/swagger(string organizationId, string? environmentName = (), string? ifNoneMatch = (), string? xWso2Tenant = ()) returns json|error {
         string resourcePath = string `/apis/${getEncodedUri(apiId)}/swagger`;
         map<anydata> queryParam = {"organizationId": organizationId, "environmentName": environmentName};
         resourcePath = resourcePath + check getPathForQueryParam(queryParam);
         map<any> headerValues = {"If-None-Match": ifNoneMatch, "X-WSO2-Tenant": xWso2Tenant};
         map<string|string[]> httpHeaders = getMapForHeaders(headerValues);
-        string response = check self.clientEp->get(resourcePath, httpHeaders);
+        json response = check self.clientEp->get(resourcePath, httpHeaders);
         return response;
     }
     # Get GraphQL Definition
@@ -174,13 +174,13 @@ public isolated client class Client {
     # + ifNoneMatch - Validator for conditional requests; based on the ETag of the formerly retrieved variant of the resourec. 
     # + xWso2Tenant - For cross-tenant invocations, this is used to specify the tenant domain, where the resource need to be   retrieved from. 
     # + return - OK. Requested swagger document of the API is returned 
-    resource isolated function get apis/[string apiId]/'graphql\-schema(string organizationId, string? ifNoneMatch = (), string? xWso2Tenant = ()) returns string|error {
+    resource isolated function get apis/[string apiId]/'graphql\-schema(string organizationId, string? ifNoneMatch = (), string? xWso2Tenant = ()) returns json|error {
         string resourcePath = string `/apis/${getEncodedUri(apiId)}/graphql-schema`;
         map<anydata> queryParam = {"organizationId": organizationId};
         resourcePath = resourcePath + check getPathForQueryParam(queryParam);
         map<any> headerValues = {"If-None-Match": ifNoneMatch, "X-WSO2-Tenant": xWso2Tenant};
         map<string|string[]> httpHeaders = getMapForHeaders(headerValues);
-        string response = check self.clientEp->get(resourcePath, httpHeaders);
+        json response = check self.clientEp->get(resourcePath, httpHeaders);
         return response;
     }
     # Generate a SDK for an API
@@ -511,10 +511,13 @@ public isolated client class Client {
     }
     # Create a New Application
     #
+    # + organizationId - **ORGANIZATION ID** consisting the **UUID** of the organization. 
     # + payload - Application object that is to be created. 
     # + return - Created. Successful response with the newly created object as entity in the body. Location header contains URL of newly created entity. 
-    resource isolated function post applications(Application payload) returns WorkflowResponse|Application|error {
+    resource isolated function post applications(string organizationId, Application payload) returns WorkflowResponse|Application|error {
         string resourcePath = string `/applications`;
+        map<anydata> queryParam = {"organizationId": organizationId};
+        resourcePath = resourcePath + check getPathForQueryParam(queryParam);
         http:Request request = new;
         json jsonBody = payload.toJson();
         request.setPayload(jsonBody, "application/json");

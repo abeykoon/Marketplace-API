@@ -58,7 +58,7 @@ public enum IDLType {
 # + idlLocation - Link to the IDL definition   
 # + idlType - Type of the IDL (i.e OpenAPI, SDL, WSDL etc)
 public type IDL record {|
-    string content;
+    json content;
     IDLType idlType;
 |};
 

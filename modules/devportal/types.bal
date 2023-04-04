@@ -232,7 +232,7 @@ public type Subscription record {
     string requestedThrottlingPolicy?;
     string status?;
     # A url and other parameters the subscriber can be redirected.
-    string redirectionParams?;
+    string? redirectionParams?;
 };
 
 public type Settings record {
@@ -358,13 +358,13 @@ public type CommentList record {
 
 public type API_URLs record {
     # HTTP environment URL
-    string http?;
+    string? http?;
     # HTTPS environment URL
-    string https?;
+    string? https?;
     # WS environment URL
-    string ws?;
+    string? ws?;
     # WSS environment URL
-    string wss?;
+    string? wss?;
 };
 
 public type Application record {
@@ -419,13 +419,13 @@ public type User record {
 
 public type API_defaultVersionURLs record {
     # HTTP environment default URL
-    string http?;
+    string? http?;
     # HTTPS environment default URL
-    string https?;
+    string? https?;
     # WS environment default URL
-    string ws?;
+    string? ws?;
     # WSS environment default URL
-    string wss?;
+    string? wss?;
 };
 
 public type AdditionalSubscriptionInfo_SolaceTopicsObject record {
@@ -551,7 +551,7 @@ public type TagList record {
 public type API_tiers record {
     string tierName?;
     string tierPlan?;
-    API_monetizationAttributes monetizationAttributes?;
+    API_monetizationAttributes? monetizationAttributes?;
 };
 
 public type TenantList record {
@@ -788,8 +788,8 @@ public type RecommendedAPI record {
 public type SubscriptionList record {
     # Number of Subscriptions returned.
     int count?;
-    Subscription[] list?;
-    Pagination pagination?;
+    Subscription[]? list?;
+    Pagination? pagination?;
 };
 
 public type WorkflowResponse record {
@@ -815,7 +815,7 @@ public type API record {
     # Swagger definition of the API which contains details about URI templates and scopes
     string apiDefinition?;
     # WSDL URL if the API is based on a WSDL endpoint
-    string wsdlUri?;
+    string? wsdlUri?;
     # This describes in which status of the lifecycle the API is.
     string lifeCycleStatus;
     boolean isDefaultVersion?;
@@ -849,9 +849,9 @@ public type API record {
     # API categories
     string[] categories?;
     # API Key Managers
-    record {} keyManagers?;
+    //record {} keyManagers?;
     string createdTime?;
-    string lastUpdatedTime?;
+    string? lastUpdatedTime?;
     string gatewayVendor?;
     # Supported transports for the aync API.
     string[] asyncTransportProtocols?;

@@ -15,12 +15,11 @@
 //     return strArr;
 // }
 
-isolated function removeDuplicates(readonly & string[] strArr) returns string[] {
+isolated function removeDuplicates(string[] strArr) returns string[] {
     map<boolean> strings = {};
     foreach string str in strArr {
         strings[str] = true;
     }
-
     return strings.keys();
 }
 

@@ -21,6 +21,9 @@ public isolated client class GraphqlClient {
             if config.proxy is graphql:ProxyConfig {
                 graphqlClientConfig.proxy = check config.proxy.ensureType(graphql:ProxyConfig);
             }
+            if config.auth is graphql:BearerTokenConfig {
+                graphqlClientConfig.auth = check config.auth.ensureType(graphql:BearerTokenConfig);
+            }
         } on fail var e {
             return <graphql:ClientError>error("GraphQL Client Error", e, body = ());
         }

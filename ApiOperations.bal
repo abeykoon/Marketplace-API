@@ -9,7 +9,6 @@ configurable string token = ?;
 configurable string devPortalUrl = ?;
 configurable string projectApiUrl = ?;
 configurable string appServiceUrl = ?;
-//configurable string orgId = ?;
 
 final dp:ConnectionConfig dpConConfig = {
     auth: {
@@ -51,10 +50,10 @@ isolated function getOrgName(string orgId) returns string {   //TODO: implement
    return orgId;
 }
 
-isolated function searchDevPortalApis(string orgId, string orgHandler, string idpId, int 'limit = 20, int offset = 0,
-             string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns Api[]|error {
+isolated function searchDevPortalApis(string orgId, string orgHandler, string idpId, int 'limit, int offset,
+             string sort, string? query = (), string[]? keywords = ()) returns Api[]|error {
 
-    dp:APIInfo[] devPortalApis = check getDevPortalApiInfo(orgId, 0, 20, query); //TODO: check pagination, see how we can include keywords
+    dp:APIInfo[] devPortalApis = check getDevPortalApiInfo(orgId = orgId, offset = offset, 'limit = 'limit, query = query); //TODO: check pagination, see how we can include keywords
     table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId); 
     Api[] apis = check populateApis(orgId, devPortalApis, apiOwnersOfOrg, sort); 
     return apis;
@@ -111,8 +110,8 @@ isolated function getApiOwnersOfOrg(string orgId, string orgHandler, string idpI
 };
 
 isolated function getApiOwner(string orgId, string orgHandler, string idpId, string apiVersionId) returns ApiOwner|error {
-    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId);
-    return apiOwnersOfOrg.get(apiVersionId);
+    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId);  //TODO: can we do a optimized call for this?
+    return getApiOwnerFromTable(apiOwnersOfOrg, apiVersionId);
 }
 
 isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<ApiOwner> key(apiId) apiOwnerInfo, string sortingParam) returns Api[]|error {
@@ -121,13 +120,13 @@ isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<
 
     //get unique APIs 
     string[] apiNames = from dp:APIInfo api in depPortalApis select api.name;
-    string[] uniqueApiNames = removeDuplicates(<string[] & readonly>apiNames);
+    string[] uniqueApiNames = removeDuplicates(apiNames);
 
     foreach string apiName in uniqueApiNames {
         ApiVersionInfo[] versionsOfApi = getAllVersionMetaInfo(depPortalApis, apiName);
         ApiVersionInfo latestVersionOfApi = versionsOfApi[0];
         dp:API devPortalApi = check getDevPortalApi(orgId, latestVersionOfApi.apiId);
-        ApiOwner apiOwner = apiOwnerInfo.get(latestVersionOfApi.apiId);
+        ApiOwner apiOwner = check getApiOwnerFromTable(apiOwnerInfo, latestVersionOfApi.apiId);
         Api api = populateApi(devPortalApi, apiOwner, versionsOfApi);
         apisToReturn.push(api);
     }
@@ -136,6 +135,23 @@ isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<
 
     return sortedApis;
 };
+
+isolated function getApiOwnerFromTable(table<ApiOwner> key(apiId) apiOwnerInfo, string apiId) returns ApiOwner|error {
+    if apiOwnerInfo.hasKey(apiId) {
+        return apiOwnerInfo.get(apiId);
+    } else {
+        ApiOwner apiOwner = {       //TODO: This is a hack, we need to fix this
+            apiId: apiId,
+            componentId: "Unknown",
+            componentName: "Not found",
+            projectId: "Unknown",
+            projectName: "Not found",
+            orgId: "Unknown",
+            orgName: ""
+        };
+        return apiOwner;
+    }
+}
 
 isolated function sortApis(Api []apis, string sortingParam) returns Api[]|error {
 
@@ -246,9 +262,9 @@ isolated function extractApiEndpoints(dp:API dpApi) returns APIEndpoint[] {
             dp:API_URLs? uRLs = endpoint.URLs;
             if uRLs is dp:API_URLs {
                 if (apiType == WS) {
-                    endpointURL = uRLs.wss ?: "";
+                    endpointURL = uRLs["wss"] ?: "";
                 } else {
-                    endpointURL = uRLs.https ?: "";
+                    endpointURL = uRLs["https"] ?: "";
                 }
             }
             APIEndpoint apiEP = {
@@ -325,11 +341,14 @@ isolated function getApisOfOtherProjects(string projectId, Api []allApisOfOrg) r
         select api;
 }
 
-isolated function extractScopes(dp:ApplicationInfo appInfo) returns string[]? {
+isolated function extractScopes(dp:ApplicationInfo appInfo) returns string[] {
     record {|anydata...;|}? attributes = appInfo.attributes;
     if attributes is map<any> {
-        string[] scopes = <string[]>attributes.get("scopes");
-        return scopes;
+        if(attributes.hasKey("scopes")) {
+            return <string[]>attributes.get("scopes");
+        } else {
+            return [];
+        }
     } else {
         return [];
     }
@@ -352,15 +371,15 @@ isolated function getAllKeywords(string orgId) returns KeywordInfo[]|error {    
     }
 }
 
-isolated function getDPOpenApi(string orgId, string apiId) returns string|error {
+isolated function getDPOpenApi(string orgId, string apiId) returns json|error {
     dp:Client devPotalClient = getDevPotalClient();
-    string swaggerContent = check devPotalClient->/apis/[apiId]/swagger(orgId);
+    json swaggerContent = check devPotalClient->/apis/[apiId]/swagger(orgId);
     return swaggerContent;
 }
 
-isolated function getDPSdl(string orgId, string apiId) returns string|error {
+isolated function getDPSdl(string orgId, string apiId) returns json|error {
     dp:Client devPotalClient = getDevPotalClient();
-    string graphqlSdlContent = check devPotalClient->/apis/[apiId]/graphql\-schema(orgId);
+    json graphqlSdlContent = check devPotalClient->/apis/[apiId]/graphql\-schema(orgId);
     return graphqlSdlContent;
 }
 
@@ -371,7 +390,7 @@ isolated function getDPWsdl(string orgId, string apiId) returns string|error {
     return wsdlContent;
 }
 
-isolated function getAppApplications(string orgId) returns ApiApp[]|error {    //how to limit to org
+isolated function getAppApplications(string orgId) returns ApiApp[]|error {    
     dp:Client devPotalClient = getDevPotalClient();
     dp:ApplicationList applicationInfo = check devPotalClient->/applications(orgId);
     dp:ApplicationInfo[]? dpApps = applicationInfo.list;
@@ -382,7 +401,7 @@ isolated function getAppApplications(string orgId) returns ApiApp[]|error {    /
                                 name: dpApp.name ?: "",
                                 description: dpApp.description,
                                 environmentId: "",          //TODO:check
-                                subscribedApis: check getSubscriptionInfo(dpApp.applicationId ?: ""), 
+                                subscribedApis: check getSubscriptionInfo(orgId, dpApp.applicationId ?: ""), 
                                 scopes: extractScopes(dpApp)
                             };                            
         return apiApps;
@@ -391,11 +410,11 @@ isolated function getAppApplications(string orgId) returns ApiApp[]|error {    /
     }
 }
 
-isolated function getSubscriptionInfo(string applicationId) returns string[]|error {
+isolated function getSubscriptionInfo(string orgId, string applicationId) returns string[]|error {
     dp:Client devPotalClient = getDevPotalClient();
     string[] subscribedApis = [];
-    dp:SubscriptionList subscriptionResponse = check devPotalClient->/subscriptions(applicationId);
-    dp:Subscription[]? subscriptions = subscriptionResponse.list;
+    dp:SubscriptionList subscriptionResponse = check devPotalClient->/subscriptions(orgId, applicationId = applicationId);
+    dp:Subscription[]? subscriptions = subscriptionResponse["list"];
     if subscriptions is dp:Subscription[] {
         foreach dp:Subscription subscription in subscriptions {
             dp:APIInfo? apiInfo = subscription.apiInfo;
@@ -408,14 +427,14 @@ isolated function getSubscriptionInfo(string applicationId) returns string[]|err
     return subscribedApis;
 }
 
-isolated function createApplication(CreatableApiApp appInfo) returns ApiApp|ApiWorkflowResponse|error {
+isolated function createApplication(CreatableApiApp appInfo, string orgId) returns ApiApp|ApiWorkflowResponse|error {
     dp:Client devPotalClient = getDevPotalClient();
     dp:Application devPortalApp = {
         name: appInfo.name,
         throttlingPolicy: appInfo.throttlingPolicy,   
         description: appInfo.description
     };
-    dp:WorkflowResponse|dp:Application appCreationResult = check devPotalClient->/applications.post(devPortalApp);
+    dp:WorkflowResponse|dp:Application appCreationResult = check devPotalClient->/applications.post(orgId, devPortalApp);
     if appCreationResult is dp:Application {
         ApiApp apiApp = {
             name: appCreationResult.name,
@@ -533,7 +552,7 @@ isolated function getDevPortalApi(string orgId, string apiVersionId) returns dp:
 
 isolated function getDevPortalApiInfo(string orgId, int offset, int 'limit, string? query) returns dp:APIInfo[]|error { //include keywords 
     dp:Client devPortalClient = getDevPotalClient();
-    dp:APIList orgApis = check devPortalClient->/apis.get(orgId,'limit, offset); //TODO: add tags, pagination info comes here 
+    dp:APIList orgApis = check devPortalClient->/apis.get(organizationId = orgId, 'limit = 'limit, offset = offset, query = query); //TODO: add tags, pagination info comes here 
     return orgApis.list ?: [];
 };
 
