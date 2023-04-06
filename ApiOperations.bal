@@ -1,3 +1,19 @@
+// Copyright (c) 2023 WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import choreo_marketplace.devportal as dp;
 import choreo_marketplace.projectapi as prj;
 import choreo_marketplace.usersvc as usersvc;
@@ -75,72 +91,66 @@ isolated function getOrgName(string orgId) returns string {   //TODO: implement
 # + keywords - Keywords to filter the search results
 # + return - Array of APIs or error if API invocation fails
 isolated function searchDevPortalApis(string orgId, string orgHandler, string idpId, int 'limit, int offset,
-             string sort, string? query = (), string[]? keywords = ()) returns Api[]|error {
+             string sort, string? query = (), string[]? keywords = ()) returns ApiCard[]|error {
 
     dp:APIInfo[] devPortalApis = check getDevPortalApiInfo(orgId = orgId, offset = offset, 'limit = 'limit, query = query); //TODO: check pagination, see how we can include keywords
-    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId); 
-    Api[] apis = check populateApis(orgId, devPortalApis, apiOwnersOfOrg, sort); 
+    table<ChoreoComponent> key(componentId) choreoComponents = check getAllComponentsOfOrg(orgId, orgHandler, idpId); 
+    ApiCard[] apis = check populateApiCards(orgId, devPortalApis, choreoComponents, sort); 
     return apis;
 }
 
 isolated function getApibyId(string orgId, string orgHandler, string idpId, string apiVersionId) returns Api|error {
     dp:API devPortalApi = check getDevPortalApi(orgId, apiVersionId);
-    ApiOwner apiOwner = check getApiOwner(orgId, orgHandler, idpId, apiVersionId);
+    ApiPublisher apiPublisher = check getApiPublisher(orgId, orgHandler, idpId, apiVersionId);
     //find versions of same API (This is COSTLY, can we go without it?)
     //string apiName = devPortalApi.name;
     //dp:APIInfo[] apiVersions = getDevPortalApis('limit = 50, offset = 0, query = apiName);
     //ApiVersionInfo[] allVersionMetaInfo = getAllVersionMetaInfo(apiVersions, apiName);
-    return populateApi(devPortalApi, apiOwner);
+    return populateApi(devPortalApi, apiPublisher);
 }
 
-isolated function getApiOwnersOfOrg(string orgId, string orgHandler, string idpId) returns table<ApiOwner> key(apiId)|error {
+isolated function getAllComponentsOfOrg(string orgId, string orgHandler, string idpId) returns table<ChoreoComponent> key(componentId)|error {
     prj:GraphqlClient projectAPIClient = getProjectApiClient();
-    table<ApiOwner> key(apiId) apiOwnerInfo = table [];
+    table<ChoreoComponent> key(componentId) choreoComponents = table [];
     io:println("Getting org id");
     int orgIdAsNumber = check getOrgId(idpId, orgHandler);
     io:println("got org id = " + orgIdAsNumber.toString());
     prj:ProjectApisResponse projectApis = check projectAPIClient->projectApis(orgHandler, orgIdAsNumber);
     
-    record {|string id; int orgId; string name; string? handler; string? extendedHandler; record {|string? id; record {|string? proxyId;|}[]? apiVersions;|}[] components;|}[] projects = projectApis.projects;
+    record {|string id; int orgId; string name; record {|string? id; string? name;|}[] components;|}[] projects = projectApis.projects;
     foreach var project in projects {
         string projectId = project.id;
         string projectName = project.name;
-        record {|string? id; record {|string? proxyId;|}[]? apiVersions;|}[] components = project.components;
+        record {|string? id; string? name;|}[] components = project.components;
         foreach var component in components {
             string componentId = component.id ?: "";   //TODO: why optional?
-            record {|string? proxyId;|}[]? apiVersions = component.apiVersions;
-            if apiVersions is record {|string? proxyId;|}[] {
-                foreach var apiVersion in apiVersions {
-                    string? apiId = apiVersion.proxyId;
-                    if apiId is string {
-                        ApiOwner apiOwner = {
-                            apiId: apiId,
-                            componentId: componentId, 
-                            componentName: "",
-                            projectId: projectId,
-                            projectName: projectName,
-                            orgId: orgId, 
-                            orgName: ""
-                        };
-                        apiOwnerInfo.add(apiOwner);
-                    }
-                }
+            string componentName = component.name ?: "";
+            if (componentId != "") {
+                ChoreoComponent choreoComponent = {
+                    componentId: componentId,
+                    componentName: componentName,
+                    projectId: projectId,
+                    projectName: projectName,
+                    orgId: orgId,
+                    orgName: orgHandler //TODO: get org name from orgId
+                };
+                choreoComponents.add(choreoComponent);
             }
         }
     }
 
-    return apiOwnerInfo;
+    return choreoComponents;
 
 };
 
-isolated function getApiOwner(string orgId, string orgHandler, string idpId, string apiVersionId) returns ApiOwner|error {
-    table<ApiOwner> key(apiId) apiOwnersOfOrg = check getApiOwnersOfOrg(orgId, orgHandler, idpId);  //TODO: can we do a optimized call for this?
-    return getApiOwnerFromTable(apiOwnersOfOrg, apiVersionId);
+isolated function getApiPublisher(string orgId, string orgHandler, string idpId, string componentId) returns ApiPublisher|error {
+    table<ChoreoComponent> key(componentId) apiOwnersOfOrg = check getAllComponentsOfOrg(orgId, orgHandler, idpId);  //TODO: can we do a optimized call for this?
+    return getApiPublisherFromTable(apiOwnersOfOrg, componentId);
 }
 
-isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<ApiOwner> key(apiId) apiOwnerInfo, string sortingParam) returns Api[]|error {
+isolated function populateApiCards(string orgId, dp:APIInfo [] depPortalApis, table<ChoreoComponent> key(componentId) choreoComponents, string sortingParam) returns ApiCard[]|error {
     
-    Api[] apisToReturn = [];
+    ApiCard[] apisToReturn = [];
 
     //get unique APIs 
     string[] apiNames = from dp:APIInfo api in depPortalApis select api.name;
@@ -148,24 +158,36 @@ isolated function populateApis(string orgId, dp:APIInfo [] depPortalApis, table<
 
     foreach string apiName in uniqueApiNames {
         ApiVersionInfo[] versionsOfApi = getAllVersionMetaInfo(depPortalApis, apiName);
-        ApiVersionInfo latestVersionOfApi = versionsOfApi[0];
-        dp:API devPortalApi = check getDevPortalApi(orgId, latestVersionOfApi.apiId);
-        ApiOwner apiOwner = check getApiOwnerFromTable(apiOwnerInfo, latestVersionOfApi.apiId);
-        Api api = populateApi(devPortalApi, apiOwner, versionsOfApi);
+        dp:APIInfo[] matchingApisSorted = getDevportalApisByName(depPortalApis, apiName);
+        dp:APIInfo latestApi = matchingApisSorted[0];
+        string? componentIdOfLatestAPIVersion = getComponentId(latestApi);
+        ApiPublisher apiPublisher = check getApiPublisherFromTable(choreoComponents, componentIdOfLatestAPIVersion);
+        ApiCard api = populateApiCard(latestApi, apiPublisher, versionsOfApi);
         apisToReturn.push(api);
     }
 
-    Api[] sortedApis =  check sortApis(apisToReturn, sortingParam);
+    ApiCard[] sortedApis =  check sortApis(apisToReturn, sortingParam);
 
     return sortedApis;
 };
 
-isolated function getApiOwnerFromTable(table<ApiOwner> key(apiId) apiOwnerInfo, string apiId) returns ApiOwner|error {
-    if apiOwnerInfo.hasKey(apiId) {
-        return apiOwnerInfo.get(apiId);
+isolated function getApiPublisherFromTable(table<ChoreoComponent> key(componentId) choreoComponents, string? componentId) returns ApiPublisher|error {
+    if(componentId is string) {
+        if choreoComponents.hasKey(componentId) {
+            return choreoComponents.get(componentId);
+        } else {
+            ApiPublisher apiPublisher = {       //TODO: This is a hack, we need to fix this
+                componentId: "Unknown",
+                componentName: "Not found",
+                projectId: "Unknown",
+                projectName: "Not found",
+                orgId: "Unknown",
+                orgName: ""
+            };
+            return apiPublisher;
+        }
     } else {
-        ApiOwner apiOwner = {       //TODO: This is a hack, we need to fix this
-            apiId: apiId,
+        ApiPublisher apiPublisher = {       //TODO: This is a hack, we need to fix this
             componentId: "Unknown",
             componentName: "Not found",
             projectId: "Unknown",
@@ -173,11 +195,19 @@ isolated function getApiOwnerFromTable(table<ApiOwner> key(apiId) apiOwnerInfo, 
             orgId: "Unknown",
             orgName: ""
         };
-        return apiOwner;
+        return apiPublisher;
     }
 }
 
-isolated function sortApis(Api []apis, string sortingParam) returns Api[]|error {
+isolated function getDevportalApisByName(dp:APIInfo[] apis, string apiName) returns dp:APIInfo[] {
+    dp:APIInfo[] versionsOfAPI = from dp:APIInfo api in apis
+        where api.name == apiName
+        order by api.'version descending //TODO: define latest
+        select api;
+    return versionsOfAPI;
+}
+
+isolated function sortApis(ApiCard []apis, string sortingParam) returns ApiCard[]|error {
 
     string[] sortingArribs = regex:split(sortingParam, ",");
     string sortKey = sortingArribs[0];
@@ -243,7 +273,7 @@ isolated function sortApis(Api []apis, string sortingParam) returns Api[]|error 
     return error("Unexpected issue while sorting Apis"); 
 }
 
-isolated function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]? versionsOfApi = ()) returns Api {
+isolated function populateApi(dp:API dpApi, ApiPublisher apiOwner, ApiVersionInfo[]? versionsOfApi = ()) returns Api {
 
     boolean isPreRelease = false; 
     if dpApi.lifeCycleStatus == API_LIFECYCLE_PROTOTYPED {
@@ -267,7 +297,32 @@ isolated function populateApi(dp:API dpApi, ApiOwner apiOwner, ApiVersionInfo[]?
         keywords: dpApi.tags, 
         scopes: getApiScopeNames(dpApi),   
         throttlingPolicies: getBusinessPlans(dpApi), 
-        endpoints: extractApiEndpoints(dpApi),
+        endpoints: extractApiEndpoints(dpApi)
+    };
+
+    return api;
+}
+
+isolated function populateApiCard(dp:APIInfo dpApiInfo, ApiPublisher apiPublisher, ApiVersionInfo[] versionsOfApi) returns ApiCard {
+
+    boolean isPreRelease = false;
+    if dpApiInfo.lifeCycleStatus == API_LIFECYCLE_PROTOTYPED {
+        isPreRelease = true;
+    }
+
+    ApiCard api = {
+        isPublic: isPublicApi(dpApiInfo),
+        id: dpApiInfo.name,
+        name: dpApiInfo.name,
+        resourceType: ApiType,
+        'type: dpApiInfo.'type ?: "",
+        latestVersion: dpApiInfo.'version,
+        owner: apiPublisher,
+        thumbnailUri: dpApiInfo?.thumbnailUri, //considering this, FE has to fetch the thubnail 
+        createdTime: dpApiInfo.createdTime ?: "", //format 2022-07-12 10:38:55.295
+        isLatestVersionPreRelease: isPreRelease,
+        description: dpApiInfo.description,
+        usageStats: {usageCount: 0, rating: dpApiInfo.avgRating}, //TODO:calc average across multiple versions
         apiVersions: versionsOfApi
     };
 
@@ -323,7 +378,7 @@ isolated function getBusinessPlans(dp:API dpApi) returns string[] {
     }
 }
 
-isolated function isPublicApi(dp:API dpApi) returns boolean {
+isolated function isPublicApi(dp:API|dp:APIInfo dpApi) returns boolean {
     boolean isPublic = false;
     dp:APIInfo_additionalProperties[]? additionalProps = dpApi.additionalProperties;
     if additionalProps is dp:APIInfo_additionalProperties[] {
@@ -335,6 +390,18 @@ isolated function isPublicApi(dp:API dpApi) returns boolean {
         }
     }
     return isPublic;
+}
+
+isolated function getComponentId(dp:APIInfo dpApiInfo) returns string? {
+    string? componentId = "";
+    dp:APIInfo_additionalProperties[]? additionalProps = dpApiInfo.additionalProperties;
+    if additionalProps is dp:APIInfo_additionalProperties[] {
+        dp:APIInfo_additionalProperties[] componentIdProperty = from dp:APIInfo_additionalProperties property in additionalProps
+            where property.name == API_COMPONENT_INFO_PROPERTY_KEY
+            select property;
+        componentId = componentIdProperty[0].value;
+    }
+    return componentId;
 }
 
 isolated function getAllVersionMetaInfo(dp:APIInfo[] devPortalApis, string uniqueApiName) returns ApiVersionInfo[] {
@@ -580,11 +647,11 @@ isolated function getDevPortalApiInfo(string orgId, int offset, int 'limit, stri
     return orgApis.list ?: [];
 };
 
-isolated function searchApisWithinProject(string orgId , string orgHandler, string projectId, int 'limit , int offset , string? query, string[]? keywords) returns Api[]|error {
+isolated function searchApisWithinProject(string orgId , string orgHandler, string projectId, int 'limit , int offset , string? query, string[]? keywords) returns ApiCard[]|error {
     return[];
 }
 
-isolated function searchPublicApis(int 'limit, int offset,string ? query, string[]? keywords) returns Api[]|error {
+isolated function searchPublicApis(int 'limit, int offset,string ? query, string[]? keywords) returns ApiCard[]|error {
     return[];
 }
 

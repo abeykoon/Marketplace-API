@@ -1,15 +1,37 @@
+// Copyright (c) 2023 WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 
 const DEFAULT_API_ICON_PATH = "";
+
+public type ApiCard record {|
+    string 'type;
+    boolean isPublic;
+    string latestVersion;
+    boolean isLatestVersionPreRelease;
+    *CommonAttributes;
+    ApiVersionInfo[] apiVersions;
+|};
 
 # Represents API resource in Choreo marketplace
 #
 # + isPublic - Specifies whether the API is publicly exposed or not
 # + apiVersions - List of versions of API
 public type Api record {|
-    boolean isPublic;
     *CommonAttributes;
     *ApiVersion;
-    ApiVersionInfo[]? apiVersions;
 |};
 
 # Information about API version.
@@ -37,10 +59,9 @@ public type ApiVersionInfo record {|
 public type ApiVersion record {|
     string apiId;
     string 'version;
-    string createdTime;
+    boolean isPublic;
+    boolean hasThumbnail;
     boolean isPreRelease;
-    string description?;
-    UsageDetail usageStats;
     string[] keywords?;
     string[]? scopes;
     string[] throttlingPolicies;
@@ -51,9 +72,8 @@ public type ApiVersion record {|
 # project and the component the API is owned.
 #
 # + apiId - Identifier of the API
-public type ApiOwner record {|
-    readonly string apiId;
-    *Owner;
+public type ApiPublisher record {|
+    *ChoreoComponent;
 |};
 
 # Types of Interface Definition Languages associated 

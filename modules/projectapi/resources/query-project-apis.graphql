@@ -3,13 +3,9 @@ query projectApis($orgId: Int!, $orgHandler: String!) {
     id
     orgId
     name
-    handler
-    extendedHandler
     components (orgHandler: $orgHandler) {
-      id,
-      apiVersions {
-        proxyId
-      }
+      id
+      name     
     }
   }
 }

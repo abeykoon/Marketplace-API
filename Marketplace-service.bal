@@ -1,8 +1,23 @@
+// Copyright (c) 2023 WSO2 LLC. (http://www.wso2.org) All Rights Reserved.
+//
+// WSO2 Inc. licenses this file to you under the Apache License,
+// Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 import ballerina/http;
 import ballerina/io;
 
 # Service exposing all Ballerina Marketplace related operations. 
-# You need a valid token to call the resources. 
 service /registry on new http:Listener(9000) {
 
     function init() returns error? {
@@ -11,7 +26,7 @@ service /registry on new http:Listener(9000) {
      
     //TODO: FIX Pagination
 
-    //TODO: use strands
+    //TODO: Use strands to parallelize calls to featch different types of apis
 
     //TODO; think abt scopes, open api gen by service needs to mention scopes needed
 
@@ -33,13 +48,13 @@ service /registry on new http:Listener(9000) {
         boolean includeWithinProjectApis = false, 
         boolean includeInternallyExposedApis = false,
         boolean includePublicApis = false
-        ) returns Api[]|error|ErrResponse {
+        ) returns ApiCard[]|error|ErrResponse {
 
         OrganizationInfo orgInfo = check validateAndObtainOrgInfo(authHeader);
         string orgId = orgInfo.uuid;
         string orgHandler = orgInfo.'handle;
         string idpId = check getIdpId(authHeader);
-        Api[] apiCollection = [];
+        ApiCard[] apiCollection = [];
         if includeWithinProjectApis {
             //TODO: if project id not there, bad request
             if projectId == () {
@@ -48,20 +63,20 @@ service /registry on new http:Listener(9000) {
                 }};
                 return httpErr;
             } else {
-                Api[] withinProjectApis = check searchApisWithinProject(orgId, orgHandler, projectId, 'limit, offset, query, keywords);
+                ApiCard[] withinProjectApis = check searchApisWithinProject(orgId, orgHandler, projectId, 'limit, offset, query, keywords);
                 apiCollection.push(...withinProjectApis);
             }
         }   
         if includeInternallyExposedApis {
-            Api[] internallyExposedApis = check searchDevPortalApis(orgId, orgHandler, idpId, 'limit, offset, sort, query, keywords);
+            ApiCard[] internallyExposedApis = check searchDevPortalApis(orgId, orgHandler, idpId, 'limit, offset, sort, query, keywords);
             apiCollection.push(...internallyExposedApis);
         }
         if includePublicApis {
-            Api[] publicApis = check searchPublicApis('limit, offset, query, keywords);
+            ApiCard[] publicApis = check searchPublicApis('limit, offset, query, keywords);
             apiCollection.push(...publicApis);
         }
 
-        Api[] apisToReturn = check sortApis(apiCollection, sort);
+        ApiCard[] apisToReturn = check sortApis(apiCollection, sort);
         return apisToReturn;
     }
 
@@ -75,7 +90,7 @@ service /registry on new http:Listener(9000) {
     # + query - Search query. If not specified, all apis will be featched  
     # + keywords - Keywords of apis to filter the search
     # + return - List of Apis. Each Api will contain details of its latest version
-    isolated resource function get apis/'internal/projectScope/[string projectId](@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns Api[]|error {
+    isolated resource function get apis/'internal/projectScope/[string projectId](@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns ApiCard[]|error {
         OrganizationInfo orgInfo = check validateAndObtainOrgInfo(authHeader);
         return check searchApisWithinProject(orgInfo.uuid, orgInfo.'handle, projectId, 'limit, offset, query, keywords);
     }
@@ -89,7 +104,7 @@ service /registry on new http:Listener(9000) {
     # + query - Search query. If not specified, all apis will be featched  
     # + keywords - List of keywords to filter the search. Search will include apis having one or more of the keywords specified.
     # + return - List of org level apis matches with search
-    resource function get apis/'internal/orgScope(@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns Api[]|error {
+    resource function get apis/'internal/orgScope(@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "project,ASC", string? query = (), string[]? keywords = ()) returns ApiCard[]|error {
         io:println("api hit");
         OrganizationInfo orgInfo = check validateAndObtainOrgInfo(authHeader);
         string idpId = check getIdpId(authHeader);
@@ -107,7 +122,7 @@ service /registry on new http:Listener(9000) {
     # + query - Search query. If not specified, all apis will be featched 
     # + keywords - List of keywords to filter the search. Search will include apis having one or more of the keywords specified.
     # + return - List of org level apis matches with search
-    isolated resource function get apis/publicScope(@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "name,ASC", string? query = (), string[]? keywords = ()) returns Api[]|error {
+    isolated resource function get apis/publicScope(@http:Header {name: "x-jwt-assertion"} string authHeader, int 'limit = 20, int offset = 0, string sort = "name,ASC", string? query = (), string[]? keywords = ()) returns ApiCard[]|error {
         OrganizationInfo _ = check validateAndObtainOrgInfo(authHeader);
         return check searchPublicApis('limit, offset, query, keywords);
     }
@@ -117,7 +132,7 @@ service /registry on new http:Listener(9000) {
     # + authHeader - Header with valid token  
     # + maxCount - Max number of Apis to return
     # + return - List of popular APIs
-    isolated resource function get apis/popular(@http:Header {name: "x-jwt-assertion"} string authHeader, int maxCount) returns Api[]|error {  //TODO: consider 3 popular for 3 categories
+    isolated resource function get apis/popular(@http:Header {name: "x-jwt-assertion"} string authHeader, int maxCount) returns ApiCard[]|error {  //TODO: consider 3 popular for 3 categories
         OrganizationInfo orgInfo = check validateAndObtainOrgInfo(authHeader);
         string idpId = check getIdpId(authHeader);
         return searchDevPortalApis(orgId = orgInfo.uuid, orgHandler = orgInfo.'handle, idpId = idpId, 'limit = maxCount, offset = 0, sort = "rating, DSC");

@@ -223,13 +223,9 @@ public type ProjectApisResponse record {|
         string id;
         int orgId;
         string name;
-        string? handler;
-        string? extendedHandler;
         record {|
             string? id;
-            record {|
-                string? proxyId;
-            |}[]? apiVersions;
+            string? name;
         |}[] components;
     |}[] projects;
 |};
