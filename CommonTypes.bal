@@ -1,5 +1,6 @@
 
-# Definition of a resource is a combination of different types
+# Definition of a resource in Choreo Marketplace is a combination
+#  of different types supported by the marketplace
 public type Resource Api|Config;
 
 # Types of resouces exposed by marketplace API
@@ -10,20 +11,19 @@ public enum ResourceType {      //can change
     PolicyType
 };
 
+# Documentation types supported by marketplace API.
 public enum DocType {
-    ApiDoc  //Doc describing an API 
+    # Doc describing an API 
+    ApiDoc  
 }
 
-# Common attributes of marketplace resources
+# Common attributes of marketplace resources.
 #
-# + id - Across choreo unique id of resource  
-# + name - Display name of resource (i.e Api name, config name)  
+# + id - Unique identifier of resource (i.e API ID, config ID)
+# + name - Display name of resource (i.e API name, config name)  
 # + resourceType - Type of resource (i.e API, Config)  
-# + visibility - Visibility of the resource and related attributes  
-# + description - A short description on what resource is about  
-# + usageStats - Details on usage of the resource  
-# + keywords - Keywords/tags related to the resource  
-# + iconPath - Path to the icon of the resource
+# + owner - Owner of the resource (i.e Choreo organization, Choreo project, Choreo component)  
+# + hasThumbnail - True if resource has a thumbnail image
 public type CommonAttributes record {           
     string id;
     string name; 
@@ -32,12 +32,15 @@ public type CommonAttributes record {
     boolean hasThumbnail;
 };
 
-# Represents visibility attributes of an internally exposed resouce of Choreo marketplace
-#
-# + organizationName - Name of the Choreo organization from which API is exposed   
-# + projectName - Name of the Choreo project from which API is exposed
-# + componentName - Name of the Choreo component from which API is exposed 
-# + isPreRelease - True if API is exposed as a pre-release inside Choreo
+# Represents a resource owner in Choreo marketplace. 
+# A resource maybe owned by a Choreo organization, project or component.
+# 
+# + orgId - ID of the Choreo organization from which resource is published
+# + orgName - Name of the Choreo organization from which resource is published
+# + projectName - Name of the Choreo project from which resource is published
+# + projectId - ID of the Choreo project from which resource is published
+# + componentName - Name of the Choreo component from which resource is published  
+# + componentId - ID of the Choreo component from which resource is published
 public type Owner record {
     string orgId;
     string orgName;
@@ -47,14 +50,15 @@ public type Owner record {
     string componentId;
 };
 
-# Represents visibility attributes of an externally exposed resouce of Choreo marketplace
+
+# External visibility type of a resource in Choreo marketplace.
 #
-# + organizationName - owner of public resource (i.e Choreo)
+# + organizationName - Name of the organization to which the resource is published
 public type External record {
     string organizationName;
 };
 
-# Represents a keyword associated with a marketplace resource 
+# Represents a keyword associated with a marketplace resource. 
 #
 # + keyword - Keyword value 
 # + count - Number of resources having the keyword 
@@ -63,35 +67,57 @@ public type KeywordInfo record {|
     int count;
 |};
 
-# Defines usage information of a marketplace resource 
+# Defines usage information of a marketplace resource. 
 #
 # + usageCount - Number of downloads/references 
-# + rating - Rating given by users (1-5)
+# + rating - Average rating given by users 
 public type UsageDetail record {|
     int usageCount;
     string? rating;
 |};
 
+# Structure of a request to add a rating for a resource in Choreo marketplace.
+#
+# + resourceId - ID of the resource to be rated
+# + ratedBy - User who is rating the resource
+# + rating - Rating value given by the user
 public type RatingRequest record {
-    string apiId;
+    string resourceId;
     string ratedBy?;
     int rating;
 };
 
+# Represents a rating given by a user for a resource in Choreo marketplace.
+#
+# + ratingId - Unique ID of the rating
 public type Rating record {
     string ratingId?;
     *RatingRequest;
 };
 
+# Document information of a marketplace resource.
+#
+# + documentId - Unique ID of the document
+# + name - Name of the document
+# + docType - Type of the document
+# + summary - Summary of the document
+# + sourceType - Type of the source inside the document  (i.e text, xml, json)
+# + sourceUrl - URL of the actual url from where the document can be fetched
 public type Document record {
     string documentId;
     string name;
-    DocType docType; //type of doc, there can be a set of defined docs
+    DocType docType;
     string summary?;
-    string sourceType;  //type of source inside - text, xml, json
+    string sourceType;   
     string sourceUrl;
 };
 
+# Represents an organization in Choreo marketplace.
+#
+# + id -   Integer ID of the organization (used internally)
+# + uuid - UUID of the organization
+# + 'handle - Handle of the organizationb (name)
+# + name - Name of there organization
 public type Organization record {
     string id;
     string uuid;
@@ -99,6 +125,10 @@ public type Organization record {
     string name;
 };
 
+# Meta information of an organization in Choreo marketplace.
+#
+# + 'handle - Handle of the organization (name) 
+# + uuid - UUID of the organization
 public type OrganizationInfo record {
     string 'handle;
     string uuid;

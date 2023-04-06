@@ -15,6 +15,7 @@ final dp:ConnectionConfig dpConConfig = {
         token: token
     }
 };
+//Client to call devportal
 final dp:Client devPortalClient = check new (dpConConfig, serviceUrl = devPortalUrl);
 
 final prj:ConnectionConfig projectApiConConfig = {
@@ -22,6 +23,7 @@ final prj:ConnectionConfig projectApiConConfig = {
         token: token
     }
 };
+//Client to call GraphQL API 
 final prj:GraphqlClient projectAPIClient = check new (projectApiConConfig, serviceUrl = projectApiUrl);
 
 final usersvc:UserServiceClient userSvcClient = check new(appServiceUrl);
@@ -34,6 +36,11 @@ isolated function getProjectApiClient() returns prj:GraphqlClient {
     return projectAPIClient;
 }
 
+# Get Interger type orgId using orgName.
+#
+# + idpId - IDP ID of the user  
+# + orgName - Name of the organization
+# + return - Organization ID
 isolated function getOrgId(string idpId, string orgName) returns int|error {
     map<string[]> headers = {};
     headers[REQUEST_USER_ID] = [idpId];
@@ -46,10 +53,27 @@ isolated function getOrgId(string idpId, string orgName) returns int|error {
     return orgId;
 }
 
+
+# Get organization name using orgId.
+#
+# + orgId - ID of the organization
+# + return - Name of the organization
 isolated function getOrgName(string orgId) returns string {   //TODO: implement
    return orgId;
 }
 
+
+# Search APIs in the devportal.
+#
+# + orgId - ID of the organization
+# + orgHandler - Organization handler
+# + idpId - IDP ID of the user associated with the call
+# + 'limit - Maximum number of APIs to return
+# + offset - Pagination offset
+# + sort - Sorting parameter and order in the format <field>,<order>
+# + query - Search query. If not provided, all APIs will be returned
+# + keywords - Keywords to filter the search results
+# + return - Array of APIs or error if API invocation fails
 isolated function searchDevPortalApis(string orgId, string orgHandler, string idpId, int 'limit, int offset,
              string sort, string? query = (), string[]? keywords = ()) returns Api[]|error {
 
@@ -525,14 +549,14 @@ isolated function getApiDocumentContent(string orgId, string apiId, string docum
 isolated function rateApiVersion(string orgId, RatingRequest ratingRequest) returns Rating|error {
     dp:Client devPotalClient = getDevPotalClient();
     dp:Rating dpRating = {
-        apiId: ratingRequest.apiId,
+        apiId: ratingRequest.resourceId,
         rating: ratingRequest.rating,
         ratedBy: ratingRequest.ratedBy
     };
-    dp:Rating ratingResponse = check devPotalClient->/apis/[ratingRequest.apiId]/user\-rating.put(orgId, dpRating);
+    dp:Rating ratingResponse = check devPotalClient->/apis/[ratingRequest.resourceId]/user\-rating.put(orgId, dpRating);
     Rating apiRating =  {
         ratingId: ratingResponse.ratingId,
-        apiId: ratingResponse.apiId ?: "", 
+        resourceId: ratingResponse.apiId ?: "", 
         ratedBy: ratingResponse.ratedBy, 
         rating: ratingResponse.rating
     };

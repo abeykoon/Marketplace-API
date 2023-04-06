@@ -13,7 +13,7 @@ service /registry on new http:Listener(9000) {
 
     //TODO: use strands
 
-    //TODO; think abt scopes
+    //TODO; think abt scopes, open api gen by service needs to mention scopes needed
 
     # Search for any Api (within components, external or public) in Choreo.
     #
